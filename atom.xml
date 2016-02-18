@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://shimaomao.info/"/>
-  <updated>2016-02-17T05:07:28.660Z</updated>
+  <updated>2016-02-18T00:37:16.741Z</updated>
   <id>http://shimaomao.info/</id>
   
   <author>
@@ -14,6 +14,25 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title></title>
+    <link href="http://shimaomao.info/2016/02/18/test/"/>
+    <id>http://shimaomao.info/2016/02/18/test/</id>
+    <published>2016-02-18T00:37:16.741Z</published>
+    <updated>2016-02-18T00:37:16.741Z</updated>
+    
+    <content type="html">&lt;p&gt;title: my new post #可以改成中文的，如“新文章”&lt;br&gt;date: 2013-05-29 07:56:29 #发表日期，一般不改动&lt;br&gt;categories: blog #文章文类&lt;br&gt;tags: [博客，文章] #文章标签，多于一项时用这种格式&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;title: my new post #可以改成中文的，如“新文章”&lt;br&gt;date: 2013-05-29 07:56:29 #发表日期，一般不改动&lt;br&gt;categories: blog #文章文类&lt;br&gt;tags: [博客，文章] #文章标签，多于一项时用这种格式&lt;/
+    
+    </summary>
+    
+    
+  </entry>
   
   <entry>
     <title>Hello World</title>
