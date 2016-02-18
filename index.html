@@ -185,11 +185,221 @@
 
       <div class="body-wrap">
   
+    <article id="post-传统的BIO编程" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2016/02/18/传统的BIO编程/" class="article-date">
+  	<time datetime="2016-02-18T15:05:19.506Z" itemprop="datePublished">2月 18 2016</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/02/18/传统的BIO编程/">传统的BIO编程</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>网络编程的基本模型是Client/Server模型，也就是两个进程之间进行相互通信，其中服务端提供位置信息（绑定的IP地址和监听端口），客户端通过连接操作向服务端监听的地址发起连接请求，通过三次握手建立连接，如果连接建立成功，双方就可以通过网络套接字（Socket）进行通信。</p>
+<p>在基于传统同步阻塞模型开发中，ServerSocket负责绑定IP地址，启动监听端口，Socket负责发起连接操作，连接成功之后，双方通过输入和输出流进行同步阻塞式通信。</p>
+<p>下面，我们就以经典的时间服务器（TimeServer）为例，通过代码分析来回顾和熟悉下BIO编程。</p>
+<h3 id="BIO通信模型图"><a href="#BIO通信模型图" class="headerlink" title="BIO通信模型图"></a>BIO通信模型图</h3><p>首先，我们通过下面的通信模型图来熟悉下BIO的服务端通信模型：采用BIO通信模型的服务端，通常由一个独立的Acceptor线程负责监听客户端的连接，它接收到客户端连接请求之后为每个客户端创建一个新的线程进行链路处理，处理完成之后，通过输出流返回应答给客户端，线程销毁。这就是典型的一请求一应答通信模型。</p>
+<p><img src="http://ifeve.com/wp-content/uploads/2014/05/bio-image.png" alt=""><br>            同步阻塞IO服务端通信模型（一客户端一线程）</p>
+<p>该模型最大的问题就是缺乏弹性伸缩能力，当客户端并发访问量增加后，服务端的线程个数和客户端并发访问数呈1：1的正比关系，由于线程是JAVA虚拟机非常宝贵的系统资源，当线程数膨胀之后，系统的性能将急剧下降，随着并发访问量的继续增大，系统会发生线程堆栈溢出、创建新线程失败等问题，并最终导致进程宕机或者僵死，不能对外提供服务。</p>
+<h3 id="同步阻塞式IO创建的TimeServer源码分析"><a href="#同步阻塞式IO创建的TimeServer源码分析" class="headerlink" title="同步阻塞式IO创建的TimeServer源码分析"></a>同步阻塞式IO创建的TimeServer源码分析</h3><p>同步阻塞IO的TimeServer：</p>
+<p>public class TimeServer {</p>
+<pre><code>    /**
+     * @param args
+     * @throws IOException
+     */
+    public static void main(String[] args) throws IOException {
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+
+    }
+     ServerSocket server = null;
+    try {
+        server = new ServerSocket(port);
+        System.out.println(&quot;The time server is start in port : &quot; + port);
+        Socket socket = null;
+        while (true) {
+        socket = server.accept();
+        new Thread(new TimeServerHandler(socket)).start();
+        }
+    } finally {
+        if (server != null) {
+        System.out.println(&quot;The time server close&quot;);
+        server.close();
+        server = null;
+        }
+    }
+    }
+}
+</code></pre><p>imeServer根据传入的参数设置监听端口，如果没有入参，使用默认值8080，20行通过构造函数创建ServerSocket，如果端口合法且没有被占用，服务端监听成功。23-26行通过一个无限循环来监听客户端的连接，如果没有客户端接入，则主线程阻塞在ServerSocket的accept操作上。启动TimeServer，通过JvisualVM打印线程堆栈，我们可以发现主程序确实阻塞在accept操作上，如下图所示：<br><img src="http://ifeve.com/wp-content/uploads/2014/05/main_program_stack.jpg" alt=""><br>主程序线程堆栈</p>
+<p>当有新的客户端接入的时候，执行代码25行，以Socket为参数构造TimeServerHandler对象，TimeServerHandler是一个Runnable，使用它为构造函数的参数创建一个新的客户端线程处理这条Socket链路。下面我们继续分析TimeServerHandler的代码。</p>
+<p>public class TimeServerHandler implements Runnable {</p>
+<pre><code>private Socket socket;
+
+public TimeServerHandler(Socket socket) {
+this.socket = socket;
+}
+
+/*
+ * (non-Javadoc)
+ *
+ * @see java.lang.Runnable#run()
+ */
+@Override
+public void run() {
+BufferedReader in = null;
+PrintWriter out = null;
+try {
+    in = new BufferedReader(new InputStreamReader(
+        this.socket.getInputStream()));
+    out = new PrintWriter(this.socket.getOutputStream(), true);
+    String currentTime = null;
+    String body = null;
+    while (true) {
+    body = in.readLine();
+    if (body == null)
+        break;
+    System.out.println(&quot;The time server receive order : &quot; + body);
+    currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new java.util.Date(
+        System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
+    out.println(currentTime);
+    }
+
+} catch (Exception e) {
+    if (in != null) {
+    try {
+        in.close();
+    } catch (IOException e1) {
+        e1.printStackTrace();
+    }
+    }
+    if (out != null) {
+    out.close();
+    out = null;
+    }
+    if (this.socket != null) {
+    try {
+        this.socket.close();
+    } catch (IOException e1) {
+        e1.printStackTrace();
+    }
+    this.socket = null;
+    }
+}
+}
+</code></pre><p>}<br>25行通过BufferedReader读取一行，如果已经读到了输入流的尾部，则返回值为null，退出循环。如果读到了非空值，则对内容进行判断，如果请求消息为查询时间的指令”QUERY TIME ORDER”则获取当前最新的系统时间，通过PrintWriter的println函数发送给客户端，最后退出循环。代码35-52行释放输入流、输出流、和Socket套接字句柄资源，最后线程自动销毁并被虚拟机回收。</p>
+<p>在下一个小结，我们将介绍同步阻塞IO的客户端代码，然后分别运行服务端和客户端，查看下程序的运行结果。</p>
+<h3 id="同步阻塞式IO创建的TimeClient源码分析"><a href="#同步阻塞式IO创建的TimeClient源码分析" class="headerlink" title="同步阻塞式IO创建的TimeClient源码分析"></a>同步阻塞式IO创建的TimeClient源码分析</h3><p>客户端通过Socket创建，发送查询时间服务器的”QUERY TIME ORDER”指令，然后读取服务端的响应并将结果打印出来，随后关闭连接，释放资源，程序退出执行。</p>
+<p>同步阻塞IO的TimeClient：</p>
+<p>public class TimeClient {</p>
+<pre><code>/**
+ * @param args
+ */
+public static void main(String[] args) {
+int port = 8080;
+if (args != null &amp;&amp; args.length &gt; 0) {
+    try {
+    port = Integer.valueOf(args[0]);
+    } catch (NumberFormatException e) {
+    // 采用默认值
+    }
+}
+Socket socket = null;
+BufferedReader in = null;
+PrintWriter out = null;
+try {
+    socket = new Socket(&quot;127.0.0.1&quot;, port);
+    in = new BufferedReader(new InputStreamReader(
+        socket.getInputStream()));
+    out = new PrintWriter(socket.getOutputStream(), true);
+    out.println(&quot;QUERY TIME ORDER&quot;);
+    System.out.println(&quot;Send order 2 server succeed.&quot;);
+    String resp = in.readLine();
+    System.out.println(&quot;Now is : &quot; + resp);
+} catch (Exception e) {
+   //不需要处理
+} finally {
+    if (out != null) {
+    out.close();
+    out = null;
+    }
+
+    if (in != null) {
+    try {
+        in.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    in = null;
+    }
+    if (socket != null) {
+    try {
+        socket.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    socket = null;
+    }
+}
+}
+</code></pre><p>}</p>
+<p>第23行客户端通过PrintWriter向服务端发送”QUERY TIME ORDER”指令，然后通过BufferedReader的readLine读取响应并打印。</p>
+<p>分别执行服务端和客户端，执行结果如下：</p>
+<p>服务端执行结果如下：</p>
+<p><img src="http://ifeve.com/wp-content/uploads/2014/05/block-io-result.jpg" alt=""><br>同步阻塞IO时间服务器服务端运行结果.</p>
+<p>客户端执行结果如下：</p>
+<p><img src="http://ifeve.com/wp-content/uploads/2014/05/block-io-client.jpg" alt=""><br>同步阻塞IO时间服务器客户端运行结果</p>
+<p>到此为止，同步阻塞式IO开发的时间服务器程序已经讲解完毕，我们发现，BIO主要的问题在于每当有一个新的客户端请求接入时，服务端必须创建一个新的线程处理新接入的客户端链路，一个线程只能处理一个客户端连接。在高性能服务器应用领域，往往需要面向成千上万个客户端的并发连接，这种模型显然无法满足高性能、高并发接入的场景。<br> 为了改进一线程一连接模型，后来又演进出了一种通过线程池或者消息队列实现1个或者多个线程处理N个客户端的模型，由于它的底层通信机制依然使用同步阻塞IO，所以被称为 “伪异步”，</p>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
     <article id="post-netty总结1" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
       <a href="/2016/02/18/netty总结1/" class="article-date">
-  	<time datetime="2016-02-18T14:24:41.842Z" itemprop="datePublished">2月 18 2016</time>
+  	<time datetime="2016-02-18T14:40:02.844Z" itemprop="datePublished">2月 18 2016</time>
 </a>
     </div>
   
@@ -209,7 +419,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="关于Netty总结的几个疑问"><a href="#关于Netty总结的几个疑问" class="headerlink" title="关于Netty总结的几个疑问"></a>关于Netty总结的几个疑问</h1><h2 id="Netty是什么？"><a href="#Netty是什么？" class="headerlink" title="Netty是什么？"></a>Netty是什么？</h2><p>   Netty是一个基于JAVA NIO类库的异步通信框架，它的架构特点是：异步非阻塞、基于事件驱动、高性能、高可靠性和高可定制性。</p>
+        <h2 id="Netty是什么？"><a href="#Netty是什么？" class="headerlink" title="Netty是什么？"></a>Netty是什么？</h2><p>   Netty是一个基于JAVA NIO类库的异步通信框架，它的架构特点是：异步非阻塞、基于事件驱动、高性能、高可靠性和高可定制性。</p>
 <h2 id="使用Netty能够做什么？"><a href="#使用Netty能够做什么？" class="headerlink" title="使用Netty能够做什么？"></a>使用Netty能够做什么？</h2><ol>
 <li>开发异步、非阻塞的TCP网络应用程序；</li>
 </ol>
@@ -286,15 +496,15 @@
 <li>可靠性差：由于所有的IO操作都是同步的，所以业务线程只要进行IO操作，也会存在被同步阻塞的风险，这会导致系统的可靠性差，依赖外部组件的处理能力和网络的情况。</li>
 </ol>
 <p>采用非阻塞IO（NIO）之后，同步阻塞IO的三个缺陷都将迎刃而解：</p>
-<ol>
+<ul>
 <li>Nio采用Reactor模式，一个Reactor线程聚合一个多路复用器Selector，它可以同时注册、监听和轮询成百上千个Channel，一个IO线程可以同时并发处理N个客户端连接，线程模型优化为1：N（N &lt; 进程可用的最大句柄数）或者M : N (M通常为CPU核数  + 1， N &lt; 进程可用的最大句柄数)；</li>
-</ol>
-<ol>
+</ul>
+<ul>
 <li>由于IO线程总数有限，不会存在频繁的IO线程之间上下文切换和竞争，CPU利用率高；</li>
-</ol>
-<ol>
+</ul>
+<ul>
 <li>所有的IO操作都是异步的，即使业务线程直接进行IO操作，也不会被同步阻塞，系统不再依赖外部的网络环境和外部应用程序的处理性能。</li>
-</ol>
+</ul>
 <p>由于切换到NIO编程之后可以为系统带来巨大的可靠性、性能提升，所以，目前采用NIO进行通信已经逐渐成为主流。</p>
 <h2 id="为什么不直接基于JDK的NIO类库编程呢？"><a href="#为什么不直接基于JDK的NIO类库编程呢？" class="headerlink" title="为什么不直接基于JDK的NIO类库编程呢？"></a>为什么不直接基于JDK的NIO类库编程呢？</h2><p>JDK NIO服务端和客户端的工作时序图：</p>
 <p><img src="http://images.cnitblog.com/news/66372/201404/141406086971872.png" alt=""></p>
