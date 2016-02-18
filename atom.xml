@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://shimaomao.info/"/>
-  <updated>2016-02-18T14:17:13.205Z</updated>
+  <updated>2016-02-18T14:24:41.842Z</updated>
   <id>http://shimaomao.info/</id>
   
   <author>
@@ -16,11 +16,11 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title></title>
+    <title>关于Netty总结的几个疑问</title>
     <link href="http://shimaomao.info/2016/02/18/netty%E6%80%BB%E7%BB%931/"/>
     <id>http://shimaomao.info/2016/02/18/netty总结1/</id>
-    <published>2016-02-18T14:17:13.205Z</published>
-    <updated>2016-02-18T14:17:13.205Z</updated>
+    <published>2016-02-18T14:24:41.842Z</published>
+    <updated>2016-02-18T14:24:41.842Z</updated>
     
     <content type="html">&lt;h1 id=&quot;关于Netty总结的几个疑问&quot;&gt;&lt;a href=&quot;#关于Netty总结的几个疑问&quot; class=&quot;headerlink&quot; title=&quot;关于Netty总结的几个疑问&quot;&gt;&lt;/a&gt;关于Netty总结的几个疑问&lt;/h1&gt;&lt;h2 id=&quot;Netty是什么？&quot;&gt;&lt;a href=&quot;#Netty是什么？&quot; class=&quot;headerlink&quot; title=&quot;Netty是什么？&quot;&gt;&lt;/a&gt;Netty是什么？&lt;/h2&gt;&lt;p&gt;   Netty是一个基于JAVA NIO类库的异步通信框架，它的架构特点是：异步非阻塞、基于事件驱动、高性能、高可靠性和高可定制性。&lt;/p&gt;
 &lt;h2 id=&quot;使用Netty能够做什么？&quot;&gt;&lt;a href=&quot;#使用Netty能够做什么？&quot; class=&quot;headerlink&quot; title=&quot;使用Netty能够做什么？&quot;&gt;&lt;/a&gt;使用Netty能够做什么？&lt;/h2&gt;&lt;ol&gt;
@@ -110,9 +110,9 @@
 &lt;/ol&gt;
 &lt;p&gt;由于切换到NIO编程之后可以为系统带来巨大的可靠性、性能提升，所以，目前采用NIO进行通信已经逐渐成为主流。&lt;/p&gt;
 &lt;h2 id=&quot;为什么不直接基于JDK的NIO类库编程呢？&quot;&gt;&lt;a href=&quot;#为什么不直接基于JDK的NIO类库编程呢？&quot; class=&quot;headerlink&quot; title=&quot;为什么不直接基于JDK的NIO类库编程呢？&quot;&gt;&lt;/a&gt;为什么不直接基于JDK的NIO类库编程呢？&lt;/h2&gt;&lt;p&gt;JDK NIO服务端和客户端的工作时序图：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://mmbiz.qpic.cn/mmbiz/AjN1jquNavibfbdbc84nv0XhA5xIlVjZmBOrxP2PLQge2NTX4HRzpcA9nayjbz7RGN9UXBTqAkKU8k619gQaicVw/0?wxfrom=5&amp;amp;wx_lazy=1&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://images.cnitblog.com/news/66372/201404/141406086971872.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
 &lt;p&gt;即便抛开代码和NIO类库复杂性不谈，一个高性能、高可靠性的NIO服务端开发和维护成本都是非常高的，开发者需要具有丰富的NIO编程经验和网络维护经验，很多时候甚至需要通过抓包来定位问题。也许开发出一套NIO程序需要1个月，但是它的稳定很可能需要1年甚至更长的时间，这也就是为什么我不建议直接使用JDK NIO类库进行通信开发的一个重要原因。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://mmbiz.qpic.cn/mmbiz/AjN1jquNavibfbdbc84nv0XhA5xIlVjZmBOrxP2PLQge2NTX4HRzpcA9nayjbz7RGN9UXBTqAkKU8k619gQaicVw/0?wxfrom=5&amp;amp;wx_lazy=1&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://images.cnitblog.com/news/66372/201404/141406086669114.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
 &lt;h2 id=&quot;Netty各版本的API变化比较频繁，我该如何选择版本？&quot;&gt;&lt;a href=&quot;#Netty各版本的API变化比较频繁，我该如何选择版本？&quot; class=&quot;headerlink&quot; title=&quot;Netty各版本的API变化比较频繁，我该如何选择版本？&quot;&gt;&lt;/a&gt;Netty各版本的API变化比较频繁，我该如何选择版本？&lt;/h2&gt;&lt;p&gt;事实上，Netty最大的变更就是3.X系列到4.X/5.X的变更，Netty不仅仅重构了包路径，对于之前一直想改但是考虑到前向兼容性没改的类库进行了优化和修改。这次变更的主要原因是Netty脱离了Jboss独立发展，这对于Netty的长远发展是件好事。&lt;/p&gt;
 &lt;p&gt;在我看来，Netty4.X系列版本的架构和API设计更加合理，同时，它提供了更多新的特性。因此，我个人建议用户可以选择4.X系列版本，以免未来升级遇到困难和问题。&lt;/p&gt;
 &lt;p&gt;对于已经使用3.X系列版本的用户，如果现有功能已经满足需求，短期内暂时不需要升级。如果需要使用更多新特性和功能，建议在充分评估之后进行升级，这可能需要一些工作量。&lt;/p&gt;
@@ -122,7 +122,7 @@
 &lt;h2 id=&quot;Netty在哪些行业得到了应用？&quot;&gt;&lt;a href=&quot;#Netty在哪些行业得到了应用？&quot; class=&quot;headerlink&quot; title=&quot;Netty在哪些行业得到了应用？&quot;&gt;&lt;/a&gt;Netty在哪些行业得到了应用？&lt;/h2&gt;&lt;ul&gt;
 &lt;li&gt;互联网行业：随着网站规模的不断扩大，系统并发访问量也越来越高，传统基于Tomcat等Web容器的垂直架构已经无法满足需求，需要拆分应用进行服务化，以提高开发和维护效率。从组网情况看，垂直的架构拆分之后，系统采用分布式部署，各个节点之间需要远程服务调用，高性能的RPC框架必不可少，Netty作为异步高性能的通信框架，往往作为基础通信组件被这些RPC框架使用。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;典型的应用有：阿里分布式服务框架Dubbo的RPC框架使用Dubbo协议进行节点间通信，Dubbo协议默认使用Netty作为基础通信组件，用于实现各进程节点之间的内部通信。它的架构图如下：&lt;br&gt;&lt;img src=&quot;http://mmbiz.qpic.cn/mmbiz/AjN1jquNavibfbdbc84nv0XhA5xIlVjZmupLz9F5S2T0u9agayjveLVAuJpHWgwibPCh8zibVBME67icdLCzbPHVQw/0?wxfrom=5&amp;amp;wx_lazy=1&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;典型的应用有：阿里分布式服务框架Dubbo的RPC框架使用Dubbo协议进行节点间通信，Dubbo协议默认使用Netty作为基础通信组件，用于实现各进程节点之间的内部通信。它的架构图如下：&lt;br&gt;&lt;img src=&quot;http://images.cnitblog.com/news/66372/201404/141403260881350.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
 &lt;p&gt;其中，服务提供者和服务消费者之间，服务提供者、服务消费者和性能统计节点之间使用Netty进行异步/同步通信。&lt;/p&gt;
 &lt;p&gt;除了Dubbo之外，淘宝的消息中间件RocketMQ的消息生产者和消息消费者之间，也采用Netty进行高性能、异步通信。&lt;/p&gt;
 &lt;p&gt;除了阿里系和淘宝系之外，很多其它的大型互联网公司或者电商内部也已经大量使用Netty构建高性能、分布式的网络服务器。&lt;/p&gt;
