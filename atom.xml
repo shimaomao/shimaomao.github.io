@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://shimaomao.info/"/>
-  <updated>2016-02-20T01:11:03.228Z</updated>
+  <updated>2016-02-20T09:47:23.471Z</updated>
   <id>http://shimaomao.info/</id>
   
   <author>
@@ -14,6 +14,308 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Js后端学习</title>
+    <link href="http://shimaomao.info/2015/12/17/Js%E5%90%8E%E7%AB%AF%E5%AD%A6%E4%B9%A0/"/>
+    <id>http://shimaomao.info/2015/12/17/Js后端学习/</id>
+    <published>2015-12-16T16:00:00.000Z</published>
+    <updated>2016-02-20T09:47:23.471Z</updated>
+    
+    <content type="html">&lt;p&gt;尝试学习NodeJS，在express和koajs之前选一个。最后选择了express，想着它比较基础、稳定一些。安装express:&lt;/p&gt;
+&lt;p&gt;npm install express –save&lt;/p&gt;
+&lt;p&gt;安装好了之后，根据express上的hello world文档，写了app.js的内容。&lt;/p&gt;
+&lt;p&gt;import * as Express from ‘express’;&lt;br&gt;let express = Express();&lt;br&gt;app.get(‘/‘, (req, res) =&amp;gt; {&lt;br&gt;     res.send(‘Hello World!’);&lt;br&gt;});&lt;br&gt;app.listen(3000, () =&amp;gt; {&lt;br&gt;     console.log(‘Example app listening on port 3000!’);&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;使用了ES6。但是这时使用node app.js不行，因为node还不支持ES6。这时候就需要babeljs来救场了。此处为第一次commit。&lt;br&gt;要使用babeljs，怎么用呢？直接用babel提供的cli？好像不太合适。不然找一个构建工具好了，除了用babel之外还可以做些别的事情。说到前端构建，自然就想到了gulpjs，不为什么，只因为它比grunt要新，据说也更快。使用gulp就需要写Gulpfile，既然准备用ES6，那么gulpfile不至于用ES5来写吧。于是找了找怎么在gulpfile里使用ES6，发现也可以使用babel。整个过程大概是这样的:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;安装gulpjs，注意必须是gulp3.9或以上。npm install gulp -g，npm install gulp –save-dev&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;安装babel相关lib。npm install babel-core babel-preset-es2015 —save-dev，npm install gulp-babel —save-dev&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;在项目目录下创建.babelrc, 然后写入{“presets”:[“es2015”]}&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;在项目目录下创建gulpfile.babel.js，然后就可以在里面使用ES6了 babelrc的内容：&lt;br&gt;{&lt;br&gt;“presets”: [“es2015”]&lt;br&gt;}&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;gulpfile.babel.js的内容：&lt;/p&gt;
+&lt;p&gt;‘use strict’;&lt;br&gt;import gulp from ‘gulp’;&lt;br&gt;import babel from ‘gulp-babel’;&lt;br&gt;gulp.task(‘build’,  () =&amp;gt; {&lt;br&gt;  return gulp.src([‘app.js’, ‘src/&lt;em&gt;*/&lt;/em&gt;.js’])&lt;br&gt;        .pipe(babel({&lt;br&gt;            presets: [‘es2015’]&lt;br&gt;        }))&lt;br&gt;        .pipe(gulp.dest(‘dist’));&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;这样就可以使用gulp build来将ES6编译成ES5了。编译之后的文件放在了dist目录下，可以使用node dist/app.js来启动项目。结果发现出错了，找不到express。排错后发现import * as Express from ‘express’;有问题，应该是import express from ‘express’。自然后面的Express也应该改成express。而let express = Express();改成let app = express();这样就没问题了。项目启动之后，使用Chrome访问localhost:3000就可以看到输出了。除了使用浏览器之外，还可以使用postman这个工具来发请求，后面的post，delete等请求在手动测试的时候都使用了postman。此处为第二次提交。&lt;br&gt;使用node dist/app.js是可以的，只是每次代码有变动，都需要手动Ctrl+C停止，然后重新启动。这种事情不可以自动化吗？当然可以了。于是一番搜索，发现了nodemon，翻译过来就是没有demon。既然用了gulp，就一用到底，使用了gulp nodemon。又一顿install:&lt;/p&gt;
+&lt;p&gt;npm install —save-dev gulp-file-cache&lt;br&gt;npm install —save-dev gulp-nodemon&lt;/p&gt;
+&lt;p&gt;然后在gulpfile里面增加了start任务来启动app，其依赖于compile任务。compile任务是在之前的build任务基础上进行了改动，然后名字也改成了compile。所以现在的流程就是：改动代码-&amp;gt;自动compile-&amp;gt;改动dist里面的文件-&amp;gt;使用nodemon跑dist里面的app.js。其中用到了file cache(文件缓存)，这样在编译ES6的时候，对于没有改动的文件就不需要编译了。此处为第三次提交。&lt;br&gt;途中，还出现了找不到module的问题。原因是使用gulp.src([‘app.js’, ‘src/&lt;strong&gt;/*.js’])不会保留目录结构，所以import routers from ‘./src/routers’;是找不到src/routers.js的，可以在dist目录里面看到app.js和routers.js在同一个目录下。一番搜索，发现gulp.src([‘app.js’, ‘src/&lt;/strong&gt;/*.js’], {base: ‘.’})就可以保留目录结构了。&lt;br&gt;至此，就搭建好了基本的开发环境。有了本地的一个类似hot deploy的server，也有了一个ES6的编译机制。同时，截至目前为止，发现用得上ES6的地方也就是：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;使用匿名函数
+使用import以及export
+使用const，let而不是var 后面应该还会有更多使用到的地方。
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;将routes分散到各个功能模块中去&quot;&gt;&lt;a href=&quot;#将routes分散到各个功能模块中去&quot; class=&quot;headerlink&quot; title=&quot;将routes分散到各个功能模块中去&quot;&gt;&lt;/a&gt;将routes分散到各个功能模块中去&lt;/h3&gt;&lt;p&gt;routes全部放在app.js中觉得不太好，每个模块应该负责管理自己的routes。这样维护起来也方便一些。于是使用express-router将routes放到了模块里。&lt;/p&gt;
+&lt;p&gt;// app.js&lt;br&gt;import routers from ‘./src/routers’;&lt;br&gt;app.use(‘/api’, routers);&lt;/p&gt;
+&lt;p&gt;// src/routers.js&lt;br&gt;import express from ‘express’;&lt;br&gt;import postRouter from ‘./posts/router’;&lt;br&gt;const router = express.Router();&lt;br&gt;router.use(function timeLog(req, res, next){&lt;br&gt;        console.log(‘Time: ‘, Date.now());&lt;br&gt;            next();&lt;br&gt;                });&lt;br&gt;router.get(‘/‘, (req, res) =&amp;gt; {&lt;br&gt;        res.send(‘hello, here is the api’);&lt;br&gt;            });&lt;br&gt;router.use(‘/posts/‘, postRouter);&lt;br&gt;export default router;&lt;/p&gt;
+&lt;p&gt;当访问/api的时候，会由routers.js文件来处理。在routers.js文件里面，又设定了当访问/posts/的时候，由posts/router.js处理。这样就将post/路径对应的处理操作放到了src/posts文件夹下面。一个文件夹就是一个功能模块，而routers.js则扮演了一个路由分发者的角色。&lt;/p&gt;
+&lt;h3 id=&quot;数据库访问&quot;&gt;&lt;a href=&quot;#数据库访问&quot; class=&quot;headerlink&quot; title=&quot;数据库访问&quot;&gt;&lt;/a&gt;数据库访问&lt;/h3&gt;&lt;p&gt;数据总是要存到一个地方的。于是便有了数据库。由于是用node，所以第一时间想到了mongodb，同时也想试试NoSQL的感觉，所以就用了。选择了mongodb，自然要选择一个工具来同它交流。在简单的比较MongoClient和Mongoose之后，还是想先用一个ORM，先看看这种写法会是什么样的，后面再来对比MongoClient。&lt;br&gt;要用mongodb，首先得装一个mongodb，由于之前使用过docker，所以就直接用docker的mongodb image。装好之后就可以使用mongodb了，在mac上，不能直接使用localhost，可以用docker-machine ip default来查看默认的docker machine的地址。此时其地址是192.128.99.100。&lt;br&gt;有了数据库之后，就开始安装Mongoose：&lt;/p&gt;
+&lt;p&gt;npm install mongoose&lt;/p&gt;
+&lt;p&gt;这里没有–save-dev，因为产品代码也需要mongoose。装好之后就可以使用了：&lt;/p&gt;
+&lt;p&gt;import mongoose from ‘mongoose’;&lt;br&gt;const dburl = ‘mongodb://192.168.99.100/test’;&lt;br&gt;mongoose.connect(dburl);&lt;br&gt;const Schema = mongoose.Schema;&lt;br&gt;const blogSchema = new Schema({&lt;br&gt;      title: String,&lt;br&gt;      author: String,&lt;br&gt;      body: String,&lt;br&gt;      comments: [{body: String, date: Date}],&lt;br&gt;      date: {type: Date, default: Date.now},&lt;br&gt;      hidden: Boolean,&lt;br&gt;      meta: {&lt;br&gt;          votes: Number,&lt;br&gt;      favs: Number&lt;br&gt;      }&lt;br&gt;});&lt;br&gt;const Blog = mongoose.model(‘Blog’, blogSchema);&lt;br&gt;let aBlog = new Blog({&lt;br&gt;    title: ‘first blog’,&lt;br&gt;    author: ‘koly’,&lt;br&gt;    body: ‘What a beautiful world’,&lt;br&gt;    comments: [{body: ‘a comment’, date: Date.now()}],&lt;br&gt;    hidden: false,&lt;br&gt;    meta: {&lt;br&gt;        votes: 1,&lt;br&gt;    favs: 1&lt;br&gt;    }&lt;br&gt;});&lt;br&gt;// 此处即为保存&lt;br&gt;aBlog.save(); &lt;/p&gt;
+&lt;h3 id=&quot;将配置放到单独的文件里&quot;&gt;&lt;a href=&quot;#将配置放到单独的文件里&quot; class=&quot;headerlink&quot; title=&quot;将配置放到单独的文件里&quot;&gt;&lt;/a&gt;将配置放到单独的文件里&lt;/h3&gt;&lt;p&gt;上面提到本地有一个数据库的地址，是192.168.99.100。本地的是这个，但是产品环境上很可能不是这个了。对于肯定会变化的东西，自然要提前准备应对变化。方式就是使用某种机制可以方便的将可变的地址切换。于是想到首先将配置提出来，放到一个文件里面，然后通过gulp根据不同的参数将不同的配置文件打到包里。&lt;br&gt;于是，配置被放到了db_config.js里：&lt;/p&gt;
+&lt;p&gt;// env/local/db_config.js&lt;br&gt;const db = {&lt;br&gt;  url: ‘mongodb://192.168.99.100/test’&lt;br&gt;};&lt;br&gt;export default db;}&lt;/p&gt;
+&lt;p&gt;在使用的时候就变成：&lt;/p&gt;
+&lt;p&gt;import dbConfig from ‘../../env/db_config’;&lt;br&gt;mongoose.connect(dbConfig.url);&lt;/p&gt;
+&lt;p&gt;每个环境有自己的一个配置文件，放在自己的文件夹里。比如local就是local文件夹，配置文件就是env/local/db_config.js。在编译的时候需要根据参数将对应环境的配置打进去，具体命令是gulp compile -env=prod。如果没有指定，则默认是local，会使用env/local/下面的db_config.js。接收命令行参数，使用了npm minimist库。&lt;/p&gt;
+&lt;p&gt;import minimist from ‘minimist’;&lt;br&gt;const cache = new Cache();&lt;br&gt;const knownOptions = {&lt;br&gt;    string: ‘env’,&lt;br&gt;    default: { env: process.env.NODE_ENV || ‘local’ }&lt;br&gt;};&lt;br&gt;const options = minimist(process.argv.slice(2), knownOptions);&lt;br&gt;const environmentPath = &lt;code&gt;env/${options.env}/*.js&lt;/code&gt;;&lt;br&gt;gulp.task(‘env’, () =&amp;gt; {&lt;br&gt;    return gulp.src(&lt;code&gt;${environmentPath}&lt;/code&gt;)&lt;br&gt;          .pipe(cache.filter())&lt;br&gt;          .pipe(babel())&lt;br&gt;          .pipe(cache.cache())&lt;br&gt;          .pipe(gulp.dest(‘dist/env’));&lt;br&gt;    });&lt;br&gt;gulp.task(‘compile’, [‘env’], () =&amp;gt; {&lt;br&gt;  …&lt;/p&gt;
+&lt;p&gt;其中在给environmentPath赋值的时候使用了es6中的模板字符串。&lt;/p&gt;
+&lt;h3 id=&quot;接收json格式的post数据&quot;&gt;&lt;a href=&quot;#接收json格式的post数据&quot; class=&quot;headerlink&quot; title=&quot;接收json格式的post数据&quot;&gt;&lt;/a&gt;接收json格式的post数据&lt;/h3&gt;&lt;p&gt;想要在express中接收并解析json数据，搜索之后发现需要一个body parser。于是果断引入，安装。&lt;/p&gt;
+&lt;p&gt;import bodyParser from ‘body-parser’;&lt;br&gt;app.use(‘/api’, bodyParser.json());&lt;/p&gt;
+&lt;p&gt;这样发送到/api的请求都会经bodyParser解析一遍。既然是body parser，自然解析的就是请求的body了。之后通过req.body拿到解析之后的数据，存入数据库就好了。由于在这里没有遇到什么坑，所以就简略了。&lt;/p&gt;
+&lt;h3 id=&quot;对请求加一些处理条件&quot;&gt;&lt;a href=&quot;#对请求加一些处理条件&quot; class=&quot;headerlink&quot; title=&quot;对请求加一些处理条件&quot;&gt;&lt;/a&gt;对请求加一些处理条件&lt;/h3&gt;&lt;p&gt;首先Content-Type得是application/json。这个针对post, put, patch, delete，不针对get。所以：&lt;/p&gt;
+&lt;p&gt;// src/routers.js&lt;br&gt;router.all(‘*’, function onlyAllowJson(req, res, next) {&lt;br&gt;  const method = req.method;&lt;br&gt;  if (lodash.includes([‘GET’], method)) next();&lt;br&gt;  else {&lt;br&gt;      const contentType = req.get(‘Content-Type’);&lt;br&gt;      if (contentType &amp;amp;&amp;amp; contentType.includes(‘application/json’))&lt;br&gt;         next();&lt;br&gt;      else&lt;br&gt;      res.status(400).send(‘wrong Content-Type, should be Content-Type:application/json, yours is ‘ + contentType);&lt;br&gt;  }&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;其中的lodash是引入了npm lodash。&lt;br&gt;其次，如果post请求的body是空，那么也不处理：&lt;/p&gt;
+&lt;p&gt;// src/routers.js&lt;br&gt;router.post(‘*’, function postShouldHasContent(req, res, next) {&lt;br&gt;  if (req.body &amp;amp;&amp;amp; !lodash.isEmpty(req.body))&lt;br&gt;  next();&lt;br&gt;  else&lt;br&gt;  res.status(400).send(‘post should contain valid body’);&lt;br&gt;});&lt;/p&gt;
+&lt;h3 id=&quot;创建blog的时候需要进行验证&quot;&gt;&lt;a href=&quot;#创建blog的时候需要进行验证&quot; class=&quot;headerlink&quot; title=&quot;创建blog的时候需要进行验证&quot;&gt;&lt;/a&gt;创建blog的时候需要进行验证&lt;/h3&gt;&lt;p&gt;在创建blog的时候，需要一些基本的验证。比如说blog的标题不能为空，作者不能为空，作者的名字的长度需要进行限制。这些验证操作都需要在数据存入数据库之前完成。还好，Mongoose提供了这样的验证机制。简单来说就是在定义schema的时候同时声明验证条件及验证的错误信息。&lt;/p&gt;
+&lt;p&gt;const blogSchema = new Schema({&lt;br&gt;  title:{&lt;br&gt;    type: String,&lt;br&gt;    required: true,&lt;br&gt;    minlength: 4&lt;br&gt;  },&lt;br&gt;  author: String,&lt;br&gt;  body: String,&lt;br&gt;  comments: [{body: String, date: Date}],&lt;br&gt;  date: {type: Date, default: Date.now},&lt;br&gt;  hidden: Boolean,&lt;br&gt;  meta: {&lt;br&gt;    votes: Number,&lt;br&gt;    favs: Number&lt;br&gt;  }&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;可以看到title的后面从String变成了一个对象，这个对象定义了title的类型和验证条件。这里required表示title必须有值，而minlength表示title的长度至少为4个字符。&lt;br&gt;其余的代码都没有变化，只是在调用的时候需要加上一些错误处理：&lt;/p&gt;
+&lt;p&gt;  postsdb.save(req.body).then((data) =&amp;gt; {&lt;br&gt;    res.status(200).json({id: data._id});&lt;br&gt;  }, (err)=&amp;gt;{&lt;br&gt;    console.log(‘creating post error’, err);&lt;br&gt;    if (‘ValidationError’ === err.name)&lt;br&gt;      res.status(400).send();&lt;br&gt;    else res.status(500).json(err);&lt;br&gt;  });&lt;/p&gt;
+&lt;p&gt;首先要在log里面记录错误信息，然后如果是ValidationError的话，就返回400，表示bad request。&lt;br&gt;光是返回400还不行，还得有错误信息啊，不然谁知道哪里错了啊。加上title的错误信息，首先在定义Schema的时候：&lt;/p&gt;
+&lt;p&gt; title:{&lt;br&gt;    type: String,&lt;br&gt;    required: ‘{PATH} cannot be empty.’, // PATH must be uppercase&lt;br&gt;    minlength: 4&lt;br&gt;  }, &lt;/p&gt;
+&lt;p&gt;之前是required: true，现在变成一个字符串，表示title不能为空，如果是空的话，会返回那个字符串作为错误信息。字符串中的{PATH}表示当前的字段，这里就是title,这里要注意，path必须是全部大写，不然不会进行替换。同时在router里面处理一下返回的错误信息：&lt;/p&gt;
+&lt;p&gt; if (‘ValidationError’ === err.name) {&lt;br&gt;      let errorMessages = composeErrorJson(err.errors);&lt;br&gt;      res.status(400).json(errorMessages);&lt;br&gt; }&lt;/p&gt;
+&lt;p&gt;composeError的目的就是将错误信息重新组织一下，变成下面的样子：&lt;/p&gt;
+&lt;p&gt;{&lt;br&gt; “title”: “title cannot be empty.”&lt;br&gt;}&lt;/p&gt;
+&lt;p&gt;之后就可以增加更多的验证了：&lt;/p&gt;
+&lt;p&gt; author: {&lt;br&gt;    type: String,&lt;br&gt;    required: ‘{PATH} cannot be empty.’,&lt;br&gt;    minlength: [2, ‘{PATH} should be more than 2 characters.’],&lt;br&gt;    maxlength: [40, ‘{PATH} should be less than 40 characters.’]&lt;br&gt;  },&lt;br&gt;  content: {&lt;br&gt;    type: String,&lt;br&gt;    required: ‘{PATH} cannot be empty.’,&lt;br&gt;    minlength: [15, ‘{PATH} should be more than 15 characters.’]&lt;br&gt;  },&lt;/p&gt;
+&lt;h3 id=&quot;删除blog&quot;&gt;&lt;a href=&quot;#删除blog&quot; class=&quot;headerlink&quot; title=&quot;删除blog&quot;&gt;&lt;/a&gt;删除blog&lt;/h3&gt;&lt;p&gt; deleteOne(id) {&lt;br&gt;    return Blog.findByIdAndRemove(id);&lt;br&gt;  }&lt;/p&gt;
+&lt;p&gt;mongoose提供了先find然后remove的方法，并不是直接remove。然后之前判断Content-Type的地方，需要将delete方法排除掉：&lt;/p&gt;
+&lt;p&gt;if (lodash.includes([‘GET’, ‘DELETE’], method)) next();&lt;/p&gt;
+&lt;p&gt;很简单，只需要在GET后加上DELETE就行了。&lt;/p&gt;
+&lt;h3 id=&quot;测试&quot;&gt;&lt;a href=&quot;#测试&quot; class=&quot;headerlink&quot; title=&quot;测试&quot;&gt;&lt;/a&gt;测试&lt;/h3&gt;&lt;p&gt;测试分为好几种，有单元测试、集成测试、功能测试等。考虑到这里只有简单的CRUD，逻辑上并不是十分复杂，所以单元测试和集成测试就不写了，只写api测试（也算是一种功能测试啦）了。api测试也有一些工具可以选用，比如frisby，supertest等。考虑到supertest可以跟mocha配合，而写单元测试我也倾向于mocha。为了风格一致，所以就选用了supertest作为api测试的工具。这里提一下supertest和superagent。后者是用来发送ajax请求的，而supertest使用了superagent，所以superagent的方法在使用supertest的时候也可以用。&lt;br&gt;写测试使用mocha，跑测试也可以用mocha。当然首先就要安装了。由于使用了gulp，并且想讲测试的命令也用gulp来跑，所以选择了gulp-mocha。安装：&lt;/p&gt;
+&lt;p&gt;npm install –save-dev gulp-mocha&lt;/p&gt;
+&lt;p&gt;使用gulp test来跑测试：&lt;/p&gt;
+&lt;p&gt;gulp.task(‘test’, [‘compile’], () =&amp;gt; {&lt;br&gt;  return gulp.src(‘tmp/test/&lt;em&gt;*/&lt;/em&gt;.spec.js’, {read:false})&lt;br&gt;  // gulp-mocha needs filepaths so you can’t have any plugins before it&lt;br&gt;  .pipe(mocha({reporter:’nyan’}))&lt;br&gt;  .pipe(exit());&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;上面的exit()是使用了gulp exit来退出，不然的话，跑完测试之后，server还是处于已启动的状态，不会自己关闭。这算是一个小bug，据说直接使用mocha来跑的话，不会出现这个问题。所以这算是gulp-mocha的bug。&lt;br&gt;test依赖于compile，之前的compile只编译了src下面的代码，现在需要编译test下面的了：&lt;/p&gt;
+&lt;p&gt; gulp.task(‘compile’, [‘env’], () =&amp;gt; {&lt;br&gt;  return gulp.src([‘app.js’, ‘src/&lt;strong&gt;/*.js’, ‘test/&lt;/strong&gt;/*.js’], {base: ‘.’})&lt;br&gt;  .pipe(cache.filter())&lt;br&gt;  .pipe(babel({&lt;br&gt;    presets: [‘es2015’]&lt;br&gt;  }))&lt;br&gt;  .pipe(cache.cache())&lt;br&gt;  .pipe(gulp.dest(‘tmp’));&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;安装supertest：&lt;/p&gt;
+&lt;p&gt;npm install supertest –save-dev&lt;/p&gt;
+&lt;p&gt;建立测试目录，和测试文件，然后写下第一个测试：&lt;/p&gt;
+&lt;p&gt;import request from ‘supertest’;&lt;br&gt;import app from ‘../../app’;&lt;/p&gt;
+&lt;p&gt;describe(‘GET /posts’, ()=&amp;gt;{&lt;br&gt;  it(‘should get one post’, function(done){&lt;br&gt;    request(app)&lt;br&gt;      .get(‘/api/posts’)&lt;br&gt;      .expect(‘Content-Type’, /json/)&lt;br&gt;      .expect(200, done);&lt;br&gt;  });&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;这里需要app.js里面定义的app，所以需要将它export出来：&lt;/p&gt;
+&lt;p&gt;export default app;&lt;/p&gt;
+&lt;p&gt;然后使用gulp test就可以执行测试了。&lt;br&gt;跑成功后，就可以继续添加更多测试了，比如：&lt;/p&gt;
+&lt;p&gt;  let aPost = {&lt;br&gt;    “title”:”A new Post B”,&lt;br&gt;    “author”:”koly”,&lt;br&gt;    “content”:”Hello this is a post.”,&lt;br&gt;    “comments”:[],&lt;br&gt;    “hidden”: false,&lt;br&gt;    “meta”: {}&lt;br&gt;  };&lt;/p&gt;
+&lt;p&gt;  it(‘should create one post’, function(done){&lt;br&gt;     request(app)&lt;br&gt;     .post(‘/api/posts’)&lt;br&gt;     .send(aPost)&lt;br&gt;     .expect(‘Content-Type’, /json/)&lt;br&gt;     .expect((res)=&amp;gt;{&lt;br&gt;      console.log(‘creating one post’);&lt;br&gt;      res.body.should.have.property(‘id’);&lt;br&gt;     })&lt;br&gt;     .expect(200, done);&lt;br&gt;   });&lt;/p&gt;
+&lt;p&gt;上面的res.body.should.have.property(‘id)使用了shouldjs，看起来很人性。其次，done放在最后的expect(200, done)才有效果，不然没有用，会导致测试跑不过。然后function(done)不能写成匿名函数形式，不然在babel编译之后mocha找不到done，也就没有作用。当然done放在end里面也是可以的，具体参看代码。&lt;br&gt;还有一个问题是，测试里面各种创建blog，把数据库给污染了怎么办呢？如何做数据库回滚呢？考虑到这是api层次的测试，如果引入mongodb的任何connection会觉得不是这个层次该做的事情。api层次的事情就让api来解决。所以最后只能当作数据库里面原来就什么数据也没有，跑测试的时候创建了数据。跑完之后把数据删掉。于是有了：&lt;/p&gt;
+&lt;p&gt; after(function(done){&lt;br&gt;   request(app)&lt;br&gt;   .get(‘/api/posts’)&lt;br&gt;   .expect(‘Content-Type’, /json/)&lt;br&gt;   .end((err, res)=&amp;gt;{&lt;br&gt;     if (err) throw err;&lt;br&gt;     let deleteFuncs = [];&lt;br&gt;     res.body.forEach((value)=&amp;gt;{&lt;br&gt;       deleteFuncs.push((cb)=&amp;gt;{&lt;br&gt;         console.log(‘deleting’, value._id);&lt;br&gt;         request(app)&lt;br&gt;         .delete(‘/api/posts/‘+value._id)&lt;br&gt;         .expect(200, cb);&lt;br&gt;       });&lt;br&gt;     });&lt;br&gt;     async.series(deleteFuncs, done);&lt;br&gt;   });&lt;br&gt; });&lt;/p&gt;
+&lt;p&gt;after函数会在所有测试跑完之后执行。其中使用了asyncjs来执行具体的删除动作。&lt;br&gt;测试就先这样了。&lt;/p&gt;
+&lt;h3 id=&quot;修改blog&quot;&gt;&lt;a href=&quot;#修改blog&quot; class=&quot;headerlink&quot; title=&quot;修改blog&quot;&gt;&lt;/a&gt;修改blog&lt;/h3&gt;&lt;p&gt;既然有了测试，那么就尝试一下TDD(Test Driven Developmen)。&lt;/p&gt;
+&lt;p&gt;it(‘should update a post’, function(done){&lt;br&gt;   request(app)&lt;br&gt;   .post(‘/api/posts’)&lt;br&gt;   .send(aPost)&lt;br&gt;   .expect(‘Content-Type’, /json/)&lt;br&gt;   .expect(200)&lt;br&gt;   .end((err, res)=&amp;gt;{&lt;br&gt;     if (err) throw err;&lt;br&gt;     request(app)&lt;br&gt;     .put(‘/api/posts/‘ + res.body.id)&lt;br&gt;     .send({&lt;br&gt;      “title”:”updated post”,&lt;br&gt;      “author”:”another author”,&lt;br&gt;      “content”:”updated posts content”&lt;br&gt;     })&lt;br&gt;     .expect(‘Content-Type’, /json/)&lt;br&gt;     .expect((res)=&amp;gt;{&lt;br&gt;       console.log(‘updating a post’);&lt;br&gt;       let body = res.body;&lt;br&gt;       body.title.should.be.exactly(“updated post”);&lt;br&gt;       body.author.should.be.exactly(aPost.author); // author cannot be udpated&lt;br&gt;       body.content.should.be.exactly(“updated posts content”);&lt;br&gt;     })&lt;br&gt;     .expect(200, done);&lt;br&gt;   });&lt;br&gt; });&lt;/p&gt;
+&lt;p&gt;就是先创建一个post，然后去update，updata的返回时新修改的结果，author字段无法修改。&lt;br&gt;实现分为两步，第一步添加路由，第二步数据库操作：&lt;/p&gt;
+&lt;p&gt;router.put(‘/:id’, (req, res)=&amp;gt;{&lt;br&gt;  console.log(‘request body for updating post’, req.body);&lt;br&gt;  postsdb.update(req.params.id, req.body).then((data)=&amp;gt;{&lt;br&gt;    createResponseWhenPostNotFound(data, req.params.id, res, (data)=&amp;gt;{&lt;br&gt;      res.status(200).json(data);&lt;br&gt;    });&lt;br&gt;  }, (err)=&amp;gt;{&lt;br&gt;    if (‘ValidationError’ === err.name) {&lt;br&gt;      let errorMessages = composeErrorJson(err.errors);&lt;br&gt;      res.status(400).json(errorMessages);&lt;br&gt;    }&lt;br&gt;    else res.status(500).json(err);&lt;br&gt;  });&lt;br&gt;});&lt;/p&gt;
+&lt;p&gt;update(id, data) {&lt;br&gt;   return Blog.findByIdAndUpdate(id, {&lt;br&gt;     title: data.title,&lt;br&gt;     content: data.content&lt;br&gt;   }, {&lt;br&gt;     new: true,&lt;br&gt;     runValidators: true&lt;br&gt;   });&lt;br&gt; },&lt;/p&gt;
+&lt;p&gt;这里findByIdAndUpdate的第三个参数是options，其中new为true表示返回新的记录，否则返回的是老记录；runValidators为true表示修改的时候需要进行验证。这两个默认都为false。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;尝试学习NodeJS，在express和koajs之前选一个。最后选择了express，想着它比较基础、稳定一些。安装express:&lt;/p&gt;
+&lt;p&gt;npm install express –save&lt;/p&gt;
+&lt;p&gt;安装好了之后，根据express上的hello world
+    
+    </summary>
+    
+      <category term="后端" scheme="http://shimaomao.info/categories/%E5%90%8E%E7%AB%AF/"/>
+    
+    
+      <category term="JS" scheme="http://shimaomao.info/tags/JS/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>URL的#号</title>
+    <link href="http://shimaomao.info/2015/12/03/URL%E7%9A%84-%E5%8F%B7/"/>
+    <id>http://shimaomao.info/2015/12/03/URL的-号/</id>
+    <published>2015-12-02T16:00:00.000Z</published>
+    <updated>2016-02-20T09:47:41.189Z</updated>
+    
+    <content type="html">&lt;h3 id=&quot;一、-的涵义&quot;&gt;&lt;a href=&quot;#一、-的涵义&quot; class=&quot;headerlink&quot; title=&quot;一、#的涵义&quot;&gt;&lt;/a&gt;一、#的涵义&lt;/h3&gt;&lt;p&gt;代表网页中的一个位置。其右面的字符，就是该位置的标识符。比如，&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://www.example.com/index.html#print
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;就代表网页index.html的print位置。浏览器读取这个URL后，会自动将print位置滚动至可视区域。&lt;/p&gt;
+&lt;p&gt;为网页位置指定标识符，有两个方法。一是使用锚点，比如&lt;a name=&quot;print&quot;&gt;&lt;/a&gt;，二是使用id属性，比如&lt;div id=&quot;print&quot;&gt;。&lt;/div&gt;&lt;/p&gt;
+&lt;h3 id=&quot;二、HTTP请求不包括&quot;&gt;&lt;a href=&quot;#二、HTTP请求不包括&quot; class=&quot;headerlink&quot; title=&quot;二、HTTP请求不包括#&quot;&gt;&lt;/a&gt;二、HTTP请求不包括#&lt;/h3&gt;&lt;p&gt;是用来指导浏览器动作的，对服务器端完全无用。所以，HTTP请求中不包括#。&lt;/p&gt;
+&lt;p&gt;比如，访问下面的网址，&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://www.example.com/index.html#print
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;浏览器实际发出的请求是这样的：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　GET /index.html HTTP/1.1
+
+　　Host: www.example.com
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以看到，只是请求index.html，根本没有”#print”的部分。&lt;/p&gt;
+&lt;h3 id=&quot;三、-后的字符&quot;&gt;&lt;a href=&quot;#三、-后的字符&quot; class=&quot;headerlink&quot; title=&quot;三、#后的字符&quot;&gt;&lt;/a&gt;三、#后的字符&lt;/h3&gt;&lt;p&gt;在第一个#后面出现的任何字符，都会被浏览器解读为位置标识符。这意味着，这些字符都不会被发送到服务器端。&lt;/p&gt;
+&lt;p&gt;比如，下面URL的原意是指定一个颜色值：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://www.example.com/?color=#fff
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是，浏览器实际发出的请求是：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　GET /?color= HTTP/1.1
+
+　　Host: www.example.com
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以看到，”#fff”被省略了。只有将#转码为%23，浏览器才会将其作为实义字符处理。也就是说，上面的网址应该被写成：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://example.com/?color=%23fff
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;四、改变-不触发网页重载&quot;&gt;&lt;a href=&quot;#四、改变-不触发网页重载&quot; class=&quot;headerlink&quot; title=&quot;四、改变#不触发网页重载&quot;&gt;&lt;/a&gt;四、改变#不触发网页重载&lt;/h3&gt;&lt;p&gt;单单改变#后的部分，浏览器只会滚动到相应位置，不会重新加载网页。&lt;/p&gt;
+&lt;p&gt;比如，从&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://www.example.com/index.html#location1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;改成&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://www.example.com/index.html#location2
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;浏览器不会重新向服务器请求index.html。&lt;/p&gt;
+&lt;h3 id=&quot;五、改变-会改变浏览器的访问历史&quot;&gt;&lt;a href=&quot;#五、改变-会改变浏览器的访问历史&quot; class=&quot;headerlink&quot; title=&quot;五、改变#会改变浏览器的访问历史&quot;&gt;&lt;/a&gt;五、改变#会改变浏览器的访问历史&lt;/h3&gt;&lt;p&gt;每一次改变#后的部分，都会在浏览器的访问历史中增加一个记录，使用”后退”按钮，就可以回到上一个位置。&lt;/p&gt;
+&lt;p&gt;这对于ajax应用程序特别有用，可以用不同的#值，表示不同的访问状态，然后向用户给出可以访问某个状态的链接。&lt;/p&gt;
+&lt;p&gt;值得注意的是，上述规则对IE 6和IE 7不成立，它们不会因为#的改变而增加历史记录。&lt;/p&gt;
+&lt;h3 id=&quot;六、window-location-hash读取-值&quot;&gt;&lt;a href=&quot;#六、window-location-hash读取-值&quot; class=&quot;headerlink&quot; title=&quot;六、window.location.hash读取#值&quot;&gt;&lt;/a&gt;六、window.location.hash读取#值&lt;/h3&gt;&lt;p&gt;window.location.hash这个属性可读可写。读取时，可以用来判断网页状态是否改变；写入时，则会在不重载网页的前提下，创造一条访问历史记录。&lt;/p&gt;
+&lt;h3 id=&quot;七、onhashchange事件&quot;&gt;&lt;a href=&quot;#七、onhashchange事件&quot; class=&quot;headerlink&quot; title=&quot;七、onhashchange事件&quot;&gt;&lt;/a&gt;七、onhashchange事件&lt;/h3&gt;&lt;p&gt;这是一个HTML 5新增的事件，当#值发生变化时，就会触发这个事件。IE8+、Firefox 3.6+、Chrome 5+、Safari 4.0+支持该事件。&lt;/p&gt;
+&lt;p&gt;它的使用方法有三种：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　window.onhashchange = func;
+
+　　&amp;lt;body onhashchange=&amp;quot;func();&amp;quot;&amp;gt;
+
+　　window.addEventListener(&amp;quot;hashchange&amp;quot;, func, false);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于不支持onhashchange的浏览器，可以用setInterval监控location.hash的变化。&lt;/p&gt;
+&lt;h3 id=&quot;八、Google抓取-的机制&quot;&gt;&lt;a href=&quot;#八、Google抓取-的机制&quot; class=&quot;headerlink&quot; title=&quot;八、Google抓取#的机制&quot;&gt;&lt;/a&gt;八、Google抓取#的机制&lt;/h3&gt;&lt;p&gt;默认情况下，Google的网络蜘蛛忽视URL的#部分。&lt;/p&gt;
+&lt;p&gt;但是，Google还规定，如果你希望Ajax生成的内容被浏览引擎读取，那么URL中可以使用”#!”，Google会自动将其后面的内容转成查询字符串_escaped&lt;em&gt;fragment&lt;/em&gt;的值。&lt;/p&gt;
+&lt;p&gt;比如，Google发现新版twitter的URL如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://twitter.com/#!/username
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;就会自动抓取另一个URL：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http://twitter.com/?_escaped_fragment_=/username
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过这种机制，Google就可以索引动态的Ajax内容。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;一、-的涵义&quot;&gt;&lt;a href=&quot;#一、-的涵义&quot; class=&quot;headerlink&quot; title=&quot;一、#的涵义&quot;&gt;&lt;/a&gt;一、#的涵义&lt;/h3&gt;&lt;p&gt;代表网页中的一个位置。其右面的字符，就是该位置的标识符。比如，&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　http:
+    
+    </summary>
+    
+      <category term="前端" scheme="http://shimaomao.info/categories/%E5%89%8D%E7%AB%AF/"/>
+    
+    
+      <category term="基础" scheme="http://shimaomao.info/tags/%E5%9F%BA%E7%A1%80/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Hessian简单示例 </title>
+    <link href="http://shimaomao.info/2015/11/20/Hessian%E7%AE%80%E5%8D%95%E7%A4%BA%E4%BE%8B/"/>
+    <id>http://shimaomao.info/2015/11/20/Hessian简单示例/</id>
+    <published>2015-11-19T16:00:00.000Z</published>
+    <updated>2016-02-20T09:35:59.908Z</updated>
+    
+    <content type="html">&lt;p&gt;   Hessian是一个轻量级的remoting onhttp工具，使用简单的方法提供了RMI的功能。 相比WebService，Hessian更简单、快捷。采用的是二进制RPC协议，因为采用的是二进制协议，所以它很适合于发送二进制数据。&lt;/p&gt;
+&lt;p&gt;示例的项目结构：&lt;br&gt;&lt;img src=&quot;http://img.blog.csdn.net/20150331152453071&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;不需要按照这里的结构来写，创建一个Java Web工程即可，将hessian.jar放到lib下面即可。&lt;/p&gt;
+&lt;h4 id=&quot;创建一个对外接口&quot;&gt;&lt;a href=&quot;#创建一个对外接口&quot; class=&quot;headerlink&quot; title=&quot;创建一个对外接口&quot;&gt;&lt;/a&gt;创建一个对外接口&lt;/h4&gt;&lt;pre&gt;&lt;code&gt;public interface Basic {
+
+String hello(String name);
+
+String say(String msg);
+
+int sum(int a,int b);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&quot;实现该接口并继承HessianServlet&quot;&gt;&lt;a href=&quot;#实现该接口并继承HessianServlet&quot; class=&quot;headerlink&quot; title=&quot;实现该接口并继承HessianServlet&quot;&gt;&lt;/a&gt;实现该接口并继承HessianServlet&lt;/h4&gt;&lt;pre&gt;&lt;code&gt;public class BasicService extends HessianServlet implements Basic {
+
+@Override
+public String hello(String name) {
+    return &amp;quot;Hello &amp;quot; + name;
+}
+
+@Override
+public int sum(int a, int b) {
+    return a + b;
+}
+
+@Override
+public String say(String msg) {
+    return &amp;quot;Say:&amp;quot; + msg;
+}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&quot;配置web-xml&quot;&gt;&lt;a href=&quot;#配置web-xml&quot; class=&quot;headerlink&quot; title=&quot;配置web.xml&quot;&gt;&lt;/a&gt;配置web.xml&lt;/h4&gt;&lt;pre&gt;&lt;code&gt;&amp;lt;servlet&amp;gt;
+  &amp;lt;servlet-name&amp;gt;hello&amp;lt;/servlet-name&amp;gt;
+  &amp;lt;servlet-class&amp;gt;com.abel533.hessian.BasicService&amp;lt;/servlet-class&amp;gt;
+&amp;lt;/servlet&amp;gt;
+
+&amp;lt;servlet-mapping&amp;gt;
+  &amp;lt;servlet-name&amp;gt;hello&amp;lt;/servlet-name&amp;gt;
+  &amp;lt;url-pattern&amp;gt;/hello&amp;lt;/url-pattern&amp;gt;
+&amp;lt;/servlet-mapping&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&quot;启动服务器&quot;&gt;&lt;a href=&quot;#启动服务器&quot; class=&quot;headerlink&quot; title=&quot;启动服务器&quot;&gt;&lt;/a&gt;启动服务器&lt;/h4&gt;&lt;h4 id=&quot;客户端代码&quot;&gt;&lt;a href=&quot;#客户端代码&quot; class=&quot;headerlink&quot; title=&quot;客户端代码&quot;&gt;&lt;/a&gt;客户端代码&lt;/h4&gt;&lt;pre&gt;&lt;code&gt;public class Client {
+interface Hello {
+    String hello(Object name);
+}
+
+interface SumSay {
+    String say(String msg);
+
+    int sum(int a, int b);
+
+    int hi(String hi);
+}
+
+public static void main(String[] args) throws MalformedURLException {
+    //TODO 根据实际地址修改
+    String url = &amp;quot;http://localhost:8090/hello&amp;quot;;
+    HessianProxyFactory factory = new HessianProxyFactory();
+    Hello basic = (Hello) factory.create(Hello.class, url);
+    System.out.println(basic.hello(123));
+
+    SumSay sumSay = (SumSay) factory.create(SumSay.class, url);
+    System.out.println(sumSay.say(&amp;quot;你好!&amp;quot;));
+
+    System.out.println(&amp;quot;10+20=&amp;quot; + sumSay.sum(10, 20));
+}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在客户端中我创建了两个接口，接口名和最上面Basic中的部分接口是一样的。&lt;/p&gt;
+&lt;p&gt;其中hello方法的参数类型和接口提供的不一致。&lt;/p&gt;
+&lt;p&gt;经过简单的测试发现，只要方法名一致，并且参数个数一致，就可以成功调用。&lt;/p&gt;
+&lt;p&gt;并且从上面的Hello和SumSay两个接口也可以看出来，不需要拥有原接口全部接口，可以只有部分接口（还可以多出来，但是不能调用）。&lt;/p&gt;
+&lt;p&gt;只有和Hessian接口一致的方法才能调用。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;   Hessian是一个轻量级的remoting onhttp工具，使用简单的方法提供了RMI的功能。 相比WebService，Hessian更简单、快捷。采用的是二进制RPC协议，因为采用的是二进制协议，所以它很适合于发送二进制数据。&lt;/p&gt;
+&lt;p&gt;示例的项目结构：&lt;
+    
+    </summary>
+    
+      <category term="后端" scheme="http://shimaomao.info/categories/%E5%90%8E%E7%AB%AF/"/>
+    
+    
+      <category term="分布式" scheme="http://shimaomao.info/tags/%E5%88%86%E5%B8%83%E5%BC%8F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>4种IO的对比</title>
+    <link href="http://shimaomao.info/2015/09/03/4%E7%A7%8DIO%E7%9A%84%E5%AF%B9%E6%AF%94/"/>
+    <id>http://shimaomao.info/2015/09/03/4种IO的对比/</id>
+    <published>2015-09-03T01:26:25.000Z</published>
+    <updated>2016-02-20T01:42:38.553Z</updated>
+    
+    <content type="html">&lt;h2 id=&quot;异步非阻塞IO&quot;&gt;&lt;a href=&quot;#异步非阻塞IO&quot; class=&quot;headerlink&quot; title=&quot;异步非阻塞IO&quot;&gt;&lt;/a&gt;异步非阻塞IO&lt;/h2&gt;&lt;p&gt;JDK1.4提供的NIO框架称为异步非阻塞IO，但是，如果严格按照Unix网络编程模型和JDK的实现进行区分，实际上它只能被称为非阻塞IO，不能叫异步非阻塞IO。在早期的JDK1.4和1.5 update10版本之前，JDK的Selector基于select/poll模型实现，它是基于IO复用技术的非阻塞IO，不是异步IO。在JDK1.5 update10和linux core2.6以上版本，sun优化了Selctor的实现，它底层使用epoll替换了select/poll,上层的API并没有变化，我们可以认为是JDK NIO的一次性能优化，但是它仍旧没有改变IO的模型。相关优化的官方说明如下：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://ifeve.com/wp-content/uploads/2014/05/13.jpg&quot; alt=&quot;&quot;&gt;&lt;br&gt;JDK1.5_update10 支持epoll&lt;/p&gt;
+&lt;p&gt;JDK1.7提供的NIO2.0，新增了异步的套接字通道，它是真正的异步IO，在异步IO操作的时候可以传递信号变量，当操作完成之后会回调相关的方法，异步IO也被称为AIO。&lt;/p&gt;
+&lt;p&gt;NIO类库支持非阻塞读和写操作，相比于之前的同步阻塞读和写，它是异步的，因此很多人习惯于称NIO为异步非阻塞IO&lt;/p&gt;
+&lt;h2 id=&quot;多路复用器Selector&quot;&gt;&lt;a href=&quot;#多路复用器Selector&quot; class=&quot;headerlink&quot; title=&quot;多路复用器Selector&quot;&gt;&lt;/a&gt;多路复用器Selector&lt;/h2&gt;&lt;p&gt;Java NIO的实现关键是通过多路复用IO技术实现的，多路复用的核心就是通过Selector来轮询注册在其上的Channel，当发现某个或者多个Channel处于就绪状态后，从阻塞状态返回就绪的Channel的选择键集合，进行IO操作。由于多路复用器是NIO实现非阻塞IO的关键，它又是主要通过Selector实现，&lt;/p&gt;
+&lt;h2 id=&quot;伪异步IO&quot;&gt;&lt;a href=&quot;#伪异步IO&quot; class=&quot;headerlink&quot; title=&quot;伪异步IO&quot;&gt;&lt;/a&gt;伪异步IO&lt;/h2&gt;&lt;p&gt;伪异步IO的概念完全来源于实践，在JDK NIO编程没有流行之前，为了解决Tomcat通信线程同步IO导致业务线程被挂住的问题，大家想到了一个办法，就是在通信线程和业务线程之间做个缓冲区，这个缓冲区用于隔离IO线程和业务线程间的直接访问，这样业务线程就不会被IO线程阻塞，对于后端的业务侧来说，将消息或者Task放到线程池后就返回了，它不再直接访问IO线程或者进行IO读写，这样也就不会被同步阻塞。类似这样的设计还包括前端启动一组线程，将接收的客户端封装成Task，放到后端的线程池执行，用于解决一连接一线程问题，类似这样通过线程池做缓冲区的做法，我们称它为伪异步IO&lt;/p&gt;
+&lt;h2 id=&quot;不同IO模型对比&quot;&gt;&lt;a href=&quot;#不同IO模型对比&quot; class=&quot;headerlink&quot; title=&quot;不同IO模型对比&quot;&gt;&lt;/a&gt;不同IO模型对比&lt;/h2&gt;&lt;p&gt;不同的IO模型由于线程模型、API等差别很大，所以它们的用法差异也非常大。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://ifeve.com/wp-content/uploads/2014/05/2.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;几种IO模型的功能和特性对比&lt;/p&gt;
+&lt;p&gt;不意味着所有的Java网络编程都必须要选择NIO和Netty，具体选择什么样的IO模型或者NIO框架，完全基于业务的实际应用场景和性能诉求，如果客户端并发连接数不多，周边对接的网元不多，服务器的负载也不重，那就完全没必要选择NIO做服务端；如果是相反情况，那就要考虑选择合适的NIO框架进行开发。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;异步非阻塞IO&quot;&gt;&lt;a href=&quot;#异步非阻塞IO&quot; class=&quot;headerlink&quot; title=&quot;异步非阻塞IO&quot;&gt;&lt;/a&gt;异步非阻塞IO&lt;/h2&gt;&lt;p&gt;JDK1.4提供的NIO框架称为异步非阻塞IO，但是，如果严格按照Unix网络编程模型和JDK的实现
+    
+    </summary>
+    
+      <category term="分布式" scheme="http://shimaomao.info/categories/%E5%88%86%E5%B8%83%E5%BC%8F/"/>
+    
+    
+      <category term="Netty" scheme="http://shimaomao.info/tags/Netty/"/>
+    
+  </entry>
   
   <entry>
     <title>传统的BIO编程</title>
@@ -333,6 +635,928 @@ try {
     
     
       <category term="Netty" scheme="http://shimaomao.info/tags/Netty/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>HTTP缓存</title>
+    <link href="http://shimaomao.info/2015/08/23/HTTP%E7%BC%93%E5%AD%98/"/>
+    <id>http://shimaomao.info/2015/08/23/HTTP缓存/</id>
+    <published>2015-08-22T16:00:00.000Z</published>
+    <updated>2016-02-20T09:46:56.065Z</updated>
+    
+    <content type="html">&lt;p&gt;浏览器是如何知道使用缓存的，其实这都是通过http中，浏览器将最后修改时间发送请求给web服务器，web服务器收到请求后跟服务器上的文档最后修改的时间对比，如果web服务器上最新文档修改时间小于或者等于浏览器发送过来的，则发送304给浏览器，使用缓存版本。&lt;/p&gt;
+&lt;p&gt;缓存的概念&lt;/p&gt;
+&lt;p&gt;缓存这个东西真的是无处不在， 有浏览器端的缓存， 有服务器端的缓存，有代理服务器的缓存， 有ASP.NET页面缓存，对象缓存。 数据库也有缓存， 等等。&lt;/p&gt;
+&lt;p&gt;http中具有缓存功能的是浏览器缓存，以及缓存代理服务器。&lt;/p&gt;
+&lt;p&gt;http缓存的是指:当Web请求抵达缓存时， 如果本地有“已缓存的”副本，就可以从本地存储设备而不是从原始服务器中提取这个文档。&lt;br&gt;缓存的好处&lt;/p&gt;
+&lt;p&gt;缓存的好处是显而易见的， 好处有，&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;减少了冗余的数据传输，节省了网费。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;减少了服务器的负担， 大大提高了网站的性能&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;加快了客户端加载网页的速度&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Fiddler可以方便地查看缓存的header&lt;/p&gt;
+&lt;p&gt;Fiddler中把header都分门别类的放在一起，这样方便查看。&lt;br&gt;&lt;img src=&quot;http://pic002.cnblogs.com/images/2012/263119/2012111910592554.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;h2 id=&quot;如何判断缓存新鲜度&quot;&gt;&lt;a href=&quot;#如何判断缓存新鲜度&quot; class=&quot;headerlink&quot; title=&quot;如何判断缓存新鲜度&quot;&gt;&lt;/a&gt;如何判断缓存新鲜度&lt;/h2&gt;&lt;p&gt;Web服务器通过2种方式来判断浏览器缓存是否是最新的。&lt;/p&gt;
+&lt;p&gt;第一种， 浏览器把缓存文件的最后修改时间通过 header ”If-Modified-Since“来告诉Web服务器。&lt;/p&gt;
+&lt;p&gt;第二种， 浏览器把缓存文件的ETag, 通过header “If-None-Match”, 来告诉Web服务器。&lt;/p&gt;
+&lt;p&gt;通过最后修改时间, 来判断缓存新鲜度&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;浏览器客户端想请求一个文档，  首先检查本地缓存，发现存在这个文档的缓存，  获取缓存中文档的最后修改时间，通过： If-Modified-Since， 发送Request给Web服务器。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Web服务器收到Request，将服务器的文档修改时间（Last-Modified）: 跟request header 中的，If-Modified-Since相比较， 如果时间是一样的， 说明缓存还是最新的， Web服务器将发送304 Not Modified给浏览器客户端， 告诉客户端直接使用缓存里的版本。如下图。&lt;br&gt;&lt;img src=&quot;http://pic002.cnblogs.com/images/2012/263119/2012112108343491.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;假如该文档已经被更新了。Web服务器将发送该文档的最新版本给浏览器客户端， 如下图。&lt;br&gt;&lt;img src=&quot;http://pic002.cnblogs.com/images/2012/263119/2012112108373348.png&quot; alt=&quot;&quot;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;实例： 打开Fiddler, 然后打开博客园首页。然后F5刷新几次浏览器。 你会看到博客园首页也用了缓存&lt;br&gt;&lt;img src=&quot;http://pic002.cnblogs.com/images/2012/263119/2012111914282875.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;与缓存有关的header&lt;/p&gt;
+&lt;p&gt;我们来看看每个header的具体含义。&lt;/p&gt;
+&lt;p&gt;Request&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th style=&quot;text-align:center&quot;&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Cache-Control: max-age=0&lt;/td&gt;
+&lt;td style=&quot;text-align:center&quot;&gt;以秒为单位&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;If-Modified-Since: Mon, 19 Nov 2012 08:38:01 GMT&lt;/td&gt;
+&lt;td style=&quot;text-align:center&quot;&gt;缓存文件的最后修改时间&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;If-None-Match: “0693f67a67cc1:0”&lt;/td&gt;
+&lt;td style=&quot;text-align:center&quot;&gt;缓存文件的Etag值&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Cache-Control: no-cache&lt;/td&gt;
+&lt;td style=&quot;text-align:center&quot;&gt;不使用缓存&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Pragma: no-cache&lt;/td&gt;
+&lt;td style=&quot;text-align:center&quot;&gt;不使用缓存&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;浏览器是如何知道使用缓存的，其实这都是通过http中，浏览器将最后修改时间发送请求给web服务器，web服务器收到请求后跟服务器上的文档最后修改的时间对比，如果web服务器上最新文档修改时间小于或者等于浏览器发送过来的，则发送304给浏览器，使用缓存版本。&lt;/p&gt;
+&lt;p&gt;缓
+    
+    </summary>
+    
+      <category term="基础" scheme="http://shimaomao.info/categories/%E5%9F%BA%E7%A1%80/"/>
+    
+    
+      <category term="HTTP" scheme="http://shimaomao.info/tags/HTTP/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Javascript异步编程</title>
+    <link href="http://shimaomao.info/2015/07/10/avascript%E5%BC%82%E6%AD%A5%E7%BC%96%E7%A8%8B/"/>
+    <id>http://shimaomao.info/2015/07/10/avascript异步编程/</id>
+    <published>2015-07-09T16:00:00.000Z</published>
+    <updated>2016-02-20T09:36:23.207Z</updated>
+    
+    <content type="html">&lt;p&gt;Javascript语言的执行环境是”单线程”（single thread）。&lt;/p&gt;
+&lt;p&gt;所谓”单线程”，就是指一次只能完成一件任务。如果有多个任务，就必须排队，前面一个任务完成，再执行后面一个任务，以此类推。&lt;/p&gt;
+&lt;p&gt;这种模式的好处是实现起来比较简单，执行环境相对单纯；坏处是只要有一个任务耗时很长，后面的任务都必须排队等着，会拖延整个程序的执行。常见的浏览器无响应（假死），往往就是因为某一段Javascript代码长时间运行（比如死循环），导致整个页面卡在这个地方，其他任务无法执行。&lt;/p&gt;
+&lt;p&gt;为了解决这个问题，Javascript语言将任务的执行模式分成两种：同步（Synchronous）和异步（Asynchronous）。&lt;/p&gt;
+&lt;p&gt;“同步模式”就是上一段的模式，后一个任务等待前一个任务结束，然后再执行，程序的执行顺序与任务的排列顺序是一致的、同步的；”异步模式”则完全不同，每一个任务有一个或多个回调函数（callback），前一个任务结束后，不是执行后一个任务，而是执行回调函数，后一个任务则是不等前一个任务结束就执行，所以程序的执行顺序与任务的排列顺序是不一致的、异步的。&lt;/p&gt;
+&lt;p&gt;“异步模式”非常重要。在浏览器端，耗时很长的操作都应该异步执行，避免浏览器失去响应，最好的例子就是Ajax操作。在服务器端，”异步模式”甚至是唯一的模式，因为执行环境是单线程的，如果允许同步执行所有http请求，服务器性能会急剧下降，很快就会失去响应。&lt;/p&gt;
+&lt;p&gt;“异步模式”编程主要有4种方法。&lt;/p&gt;
+&lt;h2 id=&quot;一、回调函数&quot;&gt;&lt;a href=&quot;#一、回调函数&quot; class=&quot;headerlink&quot; title=&quot;一、回调函数&quot;&gt;&lt;/a&gt;一、回调函数&lt;/h2&gt;&lt;p&gt;这是异步编程最基本的方法。&lt;/p&gt;
+&lt;p&gt;假定有两个函数f1和f2，后者等待前者的执行结果。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　f1();
+
+　　f2();
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果f1是一个很耗时的任务，可以考虑改写f1，把f2写成f1的回调函数。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(callback){
+
+　　　　setTimeout(function () {
+
+　　　　　　// f1的任务代码
+
+　　　　　　callback();
+
+　　　　}, 1000);
+
+　　}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行代码就变成下面这样：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　f1(f2);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;采用这种方式，我们把同步操作变成了异步操作，f1不会堵塞程序运行，相当于先执行程序的主要逻辑，将耗时的操作推迟执行。&lt;/p&gt;
+&lt;p&gt;回调函数的优点是简单、容易理解和部署，缺点是不利于代码的阅读和维护，各个部分之间高度耦合（Coupling），流程会很混乱，而且每个任务只能指定一个回调函数。&lt;/p&gt;
+&lt;h2 id=&quot;二、事件监听&quot;&gt;&lt;a href=&quot;#二、事件监听&quot; class=&quot;headerlink&quot; title=&quot;二、事件监听&quot;&gt;&lt;/a&gt;二、事件监听&lt;/h2&gt;&lt;p&gt;另一种思路是采用事件驱动模式。任务的执行不取决于代码的顺序，而取决于某个事件是否发生。&lt;/p&gt;
+&lt;p&gt;还是以f1和f2为例。首先，为f1绑定一个事件（这里采用的jQuery的写法）。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　f1.on(&amp;apos;done&amp;apos;, f2);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面这行代码的意思是，当f1发生done事件，就执行f2。然后，对f1进行改写：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+
+　　　　setTimeout(function () {
+
+　　　　　　// f1的任务代码
+
+　　　　　　f1.trigger(&amp;apos;done&amp;apos;);
+
+　　　　}, 1000);
+
+　　}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;f1.trigger(‘done’)表示，执行完成后，立即触发done事件，从而开始执行f2。&lt;/p&gt;
+&lt;p&gt;这种方法的优点是比较容易理解，可以绑定多个事件，每个事件可以指定多个回调函数，而且可以”去耦合”（Decoupling），有利于实现模块化。缺点是整个程序都要变成事件驱动型，运行流程会变得很不清晰。&lt;/p&gt;
+&lt;h2 id=&quot;三、发布-订阅&quot;&gt;&lt;a href=&quot;#三、发布-订阅&quot; class=&quot;headerlink&quot; title=&quot;三、发布/订阅&quot;&gt;&lt;/a&gt;三、发布/订阅&lt;/h2&gt;&lt;p&gt;上一节的”事件”，完全可以理解成”信号”。&lt;/p&gt;
+&lt;p&gt;我们假定，存在一个”信号中心”，某个任务执行完成，就向信号中心”发布”（publish）一个信号，其他任务可以向信号中心”订阅”（subscribe）这个信号，从而知道什么时候自己可以开始执行。这就叫做”发布/订阅模式”（publish-subscribe pattern），又称”观察者模式”（observer pattern）。&lt;/p&gt;
+&lt;p&gt;这个模式有多种实现，下面采用的是Ben Alman的Tiny Pub/Sub，这是jQuery的一个插件。&lt;/p&gt;
+&lt;p&gt;首先，f2向”信号中心”jQuery订阅”done”信号。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　jQuery.subscribe(&amp;quot;done&amp;quot;, f2);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后，f1进行如下改写：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+
+　　　　setTimeout(function () {
+
+　　　　　　// f1的任务代码
+
+　　　　　　jQuery.publish(&amp;quot;done&amp;quot;);
+
+　　　　}, 1000);
+
+　　}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;jQuery.publish(“done”)的意思是，f1执行完成后，向”信号中心”jQuery发布”done”信号，从而引发f2的执行。&lt;/p&gt;
+&lt;p&gt;此外，f2完成执行后，也可以取消订阅（unsubscribe）。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　jQuery.unsubscribe(&amp;quot;done&amp;quot;, f2);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这种方法的性质与”事件监听”类似，但是明显优于后者。因为我们可以通过查看”消息中心”，了解存在多少信号、每个信号有多少订阅者，从而监控程序的运行。&lt;/p&gt;
+&lt;h2 id=&quot;四、Promises对象&quot;&gt;&lt;a href=&quot;#四、Promises对象&quot; class=&quot;headerlink&quot; title=&quot;四、Promises对象&quot;&gt;&lt;/a&gt;四、Promises对象&lt;/h2&gt;&lt;p&gt;Promises对象是CommonJS工作组提出的一种规范，目的是为异步编程提供统一接口。&lt;/p&gt;
+&lt;p&gt;简单说，它的思想是，每一个异步任务返回一个Promise对象，该对象有一个then方法，允许指定回调函数。比如，f1的回调函数f2,可以写成：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　f1().then(f2);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;f1要进行如下改写（这里使用的是jQuery的实现）：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+
+　　　　var dfd = $.Deferred();
+
+　　　　setTimeout(function () {
+
+　　　　　　// f1的任务代码
+
+　　　　　　dfd.resolve();
+
+　　　　}, 500);
+
+　　　　return dfd.promise;
+
+　　}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这样写的优点在于，回调函数变成了链式写法，程序的流程可以看得很清楚，而且有一整套的配套方法，可以实现许多强大的功能。&lt;/p&gt;
+&lt;p&gt;比如，指定多个回调函数：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　f1().then(f2).then(f3);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;再比如，指定发生错误时的回调函数：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　f1().then(f2).fail(f3);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;而且，它还有一个前面三种方法都没有的好处：如果一个任务已经完成，再添加回调函数，该回调函数会立即执行。所以，你不用担心是否错过了某个事件或信号。这种方法的缺点就是编写和理解，都相对比较难。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Javascript语言的执行环境是”单线程”（single thread）。&lt;/p&gt;
+&lt;p&gt;所谓”单线程”，就是指一次只能完成一件任务。如果有多个任务，就必须排队，前面一个任务完成，再执行后面一个任务，以此类推。&lt;/p&gt;
+&lt;p&gt;这种模式的好处是实现起来比较简单，执行环境相
+    
+    </summary>
+    
+      <category term="前端" scheme="http://shimaomao.info/categories/%E5%89%8D%E7%AB%AF/"/>
+    
+    
+      <category term="JS" scheme="http://shimaomao.info/tags/JS/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>RESTful设计</title>
+    <link href="http://shimaomao.info/2015/07/09/RESTful%E8%AE%BE%E8%AE%A1/"/>
+    <id>http://shimaomao.info/2015/07/09/RESTful设计/</id>
+    <published>2015-07-08T16:00:00.000Z</published>
+    <updated>2016-02-20T02:32:40.678Z</updated>
+    
+    <content type="html">&lt;p&gt;网络应用程序，分为前端和后端两个部分。当前的发展趋势，就是前端设备层出不穷（手机、平板、桌面电脑、其他专用设备……）。&lt;/p&gt;
+&lt;p&gt;因此，必须有一种统一的机制，方便不同的前端设备与后端进行通信。这导致API构架的流行，甚至出现”API First”的设计思想。RESTful API是目前比较成熟的一套互联网应用程序的API设计理论。&lt;/p&gt;
+&lt;h2 id=&quot;一、协议&quot;&gt;&lt;a href=&quot;#一、协议&quot; class=&quot;headerlink&quot; title=&quot;一、协议&quot;&gt;&lt;/a&gt;一、协议&lt;/h2&gt;&lt;p&gt;API与用户的通信协议，总是使用HTTPs协议。&lt;/p&gt;
+&lt;h2 id=&quot;二、域名&quot;&gt;&lt;a href=&quot;#二、域名&quot; class=&quot;headerlink&quot; title=&quot;二、域名&quot;&gt;&lt;/a&gt;二、域名&lt;/h2&gt;&lt;p&gt;应该尽量将API部署在专用域名之下。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;https://api.example.com
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果确定API很简单，不会有进一步扩展，可以考虑放在主域名下。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;https://example.org/api/
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;三、版本（Versioning）&quot;&gt;&lt;a href=&quot;#三、版本（Versioning）&quot; class=&quot;headerlink&quot; title=&quot;三、版本（Versioning）&quot;&gt;&lt;/a&gt;三、版本（Versioning）&lt;/h2&gt;&lt;p&gt;应该将API的版本号放入URL。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;https://api.example.com/v1/
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;另一种做法是，将版本号放在HTTP头信息中，但不如放入URL方便和直观。Github采用这种做法。&lt;/p&gt;
+&lt;h2 id=&quot;四、路径（Endpoint）&quot;&gt;&lt;a href=&quot;#四、路径（Endpoint）&quot; class=&quot;headerlink&quot; title=&quot;四、路径（Endpoint）&quot;&gt;&lt;/a&gt;四、路径（Endpoint）&lt;/h2&gt;&lt;p&gt;路径又称”终点”（endpoint），表示API的具体网址。&lt;/p&gt;
+&lt;p&gt;在RESTful架构中，每个网址代表一种资源（resource），所以网址中不能有动词，只能有名词，而且所用的名词往往与数据库的表格名对应。一般来说，数据库中的表都是同种记录的”集合”（collection），所以API中的名词也应该使用复数。&lt;/p&gt;
+&lt;p&gt;举例来说，有一个API提供动物园（zoo）的信息，还包括各种动物和雇员的信息，则它的路径应该设计成下面这样。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;https://api.example.com/v1/zoos
+https://api.example.com/v1/animals
+https://api.example.com/v1/employees
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;五、HTTP动词&quot;&gt;&lt;a href=&quot;#五、HTTP动词&quot; class=&quot;headerlink&quot; title=&quot;五、HTTP动词&quot;&gt;&lt;/a&gt;五、HTTP动词&lt;/h2&gt;&lt;p&gt;对于资源的具体操作类型，由HTTP动词表示。&lt;/p&gt;
+&lt;p&gt;常用的HTTP动词有下面五个（括号里是对应的SQL命令）。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;GET（SELECT）：从服务器取出资源（一项或多项）。
+POST（CREATE）：在服务器新建一个资源。
+PUT（UPDATE）：在服务器更新资源（客户端提供改变后的完整资源）。
+PATCH（UPDATE）：在服务器更新资源（客户端提供改变的属性）。
+DELETE（DELETE）：从服务器删除资源。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;还有两个不常用的HTTP动词。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;HEAD：获取资源的元数据。
+OPTIONS：获取信息，关于资源的哪些属性是客户端可以改变的。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下面是一些例子。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;GET /zoos：列出所有动物园
+POST /zoos：新建一个动物园
+GET /zoos/ID：获取某个指定动物园的信息
+PUT /zoos/ID：更新某个指定动物园的信息（提供该动物园的全部信息）
+PATCH /zoos/ID：更新某个指定动物园的信息（提供该动物园的部分信息）
+DELETE /zoos/ID：删除某个动物园
+GET /zoos/ID/animals：列出某个指定动物园的所有动物
+DELETE /zoos/ID/animals/ID：删除某个指定动物园的指定动物
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;六、过滤信息（Filtering）&quot;&gt;&lt;a href=&quot;#六、过滤信息（Filtering）&quot; class=&quot;headerlink&quot; title=&quot;六、过滤信息（Filtering）&quot;&gt;&lt;/a&gt;六、过滤信息（Filtering）&lt;/h2&gt;&lt;p&gt;如果记录数量很多，服务器不可能都将它们返回给用户。API应该提供参数，过滤返回结果。&lt;/p&gt;
+&lt;p&gt;下面是一些常见的参数。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;?limit=10：指定返回记录的数量
+?offset=10：指定返回记录的开始位置。
+?page=2&amp;amp;per_page=100：指定第几页，以及每页的记录数。
+?sortby=name&amp;amp;order=asc：指定返回结果按照哪个属性排序，以及排序顺序。
+?animal_type_id=1：指定筛选条件
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;参数的设计允许存在冗余，即允许API路径和URL参数偶尔有重复。比如，GET /zoo/ID/animals 与 GET /animals?zoo_id=ID 的含义是相同的。&lt;/p&gt;
+&lt;h2 id=&quot;七、状态码（Status-Codes）&quot;&gt;&lt;a href=&quot;#七、状态码（Status-Codes）&quot; class=&quot;headerlink&quot; title=&quot;七、状态码（Status Codes）&quot;&gt;&lt;/a&gt;七、状态码（Status Codes）&lt;/h2&gt;&lt;p&gt;服务器向用户返回的状态码和提示信息，常见的有以下一些（方括号中是该状态码对应的HTTP动词）。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;200 OK - [GET]：服务器成功返回用户请求的数据，该操作是幂等的（Idempotent）。
+201 CREATED - [POST/PUT/PATCH]：用户新建或修改数据成功。
+202 Accepted - [*]：表示一个请求已经进入后台排队（异步任务）
+204 NO CONTENT - [DELETE]：用户删除数据成功。
+400 INVALID REQUEST - [POST/PUT/PATCH]：用户发出的请求有错误，服务器没有进行新建或修改数据的操作，该操作是幂等的。
+401 Unauthorized - [*]：表示用户没有权限（令牌、用户名、密码错误）。
+403 Forbidden - [*] 表示用户得到授权（与401错误相对），但是访问是被禁止的。
+404 NOT FOUND - [*]：用户发出的请求针对的是不存在的记录，服务器没有进行操作，该操作是幂等的。
+406 Not Acceptable - [GET]：用户请求的格式不可得（比如用户请求JSON格式，但是只有XML格式）。
+410 Gone -[GET]：用户请求的资源被永久删除，且不会再得到的。
+422 Unprocesable entity - [POST/PUT/PATCH] 当创建一个对象时，发生一个验证错误。
+500 INTERNAL SERVER ERROR - [*]：服务器发生错误，用户将无法判断发出的请求是否成功。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;状态码的完全列表参见这里。&lt;/p&gt;
+&lt;h2 id=&quot;八、错误处理（Error-handling）&quot;&gt;&lt;a href=&quot;#八、错误处理（Error-handling）&quot; class=&quot;headerlink&quot; title=&quot;八、错误处理（Error handling）&quot;&gt;&lt;/a&gt;八、错误处理（Error handling）&lt;/h2&gt;&lt;p&gt;如果状态码是4xx，就应该向用户返回出错信息。一般来说，返回的信息中将error作为键名，出错信息作为键值即可。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+    error: &amp;quot;Invalid API key&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;九、返回结果&quot;&gt;&lt;a href=&quot;#九、返回结果&quot; class=&quot;headerlink&quot; title=&quot;九、返回结果&quot;&gt;&lt;/a&gt;九、返回结果&lt;/h2&gt;&lt;p&gt;针对不同操作，服务器向用户返回的结果应该符合以下规范。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;GET /collection：返回资源对象的列表（数组）
+GET /collection/resource：返回单个资源对象
+POST /collection：返回新生成的资源对象
+PUT /collection/resource：返回完整的资源对象
+PATCH /collection/resource：返回完整的资源对象
+DELETE /collection/resource：返回一个空文档
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;十、Hypermedia-API&quot;&gt;&lt;a href=&quot;#十、Hypermedia-API&quot; class=&quot;headerlink&quot; title=&quot;十、Hypermedia API&quot;&gt;&lt;/a&gt;十、Hypermedia API&lt;/h2&gt;&lt;p&gt;RESTful API最好做到Hypermedia，即返回结果中提供链接，连向其他API方法，使得用户不查文档，也知道下一步应该做什么。&lt;/p&gt;
+&lt;p&gt;比如，当用户向api.example.com的根目录发出请求，会得到这样一个文档。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{&amp;quot;link&amp;quot;: {
+  &amp;quot;rel&amp;quot;:   &amp;quot;collection https://www.example.com/zoos&amp;quot;,
+  &amp;quot;href&amp;quot;:  &amp;quot;https://api.example.com/zoos&amp;quot;,
+  &amp;quot;title&amp;quot;: &amp;quot;List of zoos&amp;quot;,
+  &amp;quot;type&amp;quot;:  &amp;quot;application/vnd.yourformat+json&amp;quot;
+}}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面代码表示，文档中有一个link属性，用户读取这个属性就知道下一步该调用什么API了。rel表示这个API与当前网址的关系（collection关系，并给出该collection的网址），href表示API的路径，title表示API的标题，type表示返回类型。&lt;/p&gt;
+&lt;p&gt;Hypermedia API的设计被称为HATEOAS。Github的API就是这种设计，访问api.github.com会得到一个所有可用API的网址列表。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+  &amp;quot;current_user_url&amp;quot;: &amp;quot;https://api.github.com/user&amp;quot;,
+  &amp;quot;authorizations_url&amp;quot;: &amp;quot;https://api.github.com/authorizations&amp;quot;,
+  // ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从上面可以看到，如果想获取当前用户的信息，应该去访问api.github.com/user，然后就得到了下面结果。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+  &amp;quot;message&amp;quot;: &amp;quot;Requires authentication&amp;quot;,
+  &amp;quot;documentation_url&amp;quot;: &amp;quot;https://developer.github.com/v3&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面代码表示，服务器给出了提示信息，以及文档的网址。&lt;/p&gt;
+&lt;h2 id=&quot;十一、其他&quot;&gt;&lt;a href=&quot;#十一、其他&quot; class=&quot;headerlink&quot; title=&quot;十一、其他&quot;&gt;&lt;/a&gt;十一、其他&lt;/h2&gt;&lt;p&gt;（1）API的身份认证应该使用OAuth 2.0框架。&lt;/p&gt;
+&lt;p&gt;（2）服务器返回的数据格式，应该尽量使用JSON，避免使用XML。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;网络应用程序，分为前端和后端两个部分。当前的发展趋势，就是前端设备层出不穷（手机、平板、桌面电脑、其他专用设备……）。&lt;/p&gt;
+&lt;p&gt;因此，必须有一种统一的机制，方便不同的前端设备与后端进行通信。这导致API构架的流行，甚至出现”API First”的设计思想。RESTfu
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>常用 Git 命令</title>
+    <link href="http://shimaomao.info/2015/06/20/%E5%B8%B8%E7%94%A8-Git-%E5%91%BD%E4%BB%A4%E6%B8%85%E5%8D%95/"/>
+    <id>http://shimaomao.info/2015/06/20/常用-Git-命令清单/</id>
+    <published>2015-06-20T02:03:38.000Z</published>
+    <updated>2016-02-20T02:08:29.868Z</updated>
+    
+    <content type="html">&lt;p&gt;一般来说，日常使用只要记住下图6个命令，就可以了。但是熟练使用，恐怕要记住60～100个命令。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.ruanyifeng.com/blogimg/asset/2015/bg2015120901.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;几个专用名词的译名如下。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Workspace：工作区
+Index / Stage：暂存区
+Repository：仓库区（或本地仓库）
+Remote：远程仓库
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;一、新建代码库&quot;&gt;&lt;a href=&quot;#一、新建代码库&quot; class=&quot;headerlink&quot; title=&quot;一、新建代码库&quot;&gt;&lt;/a&gt;一、新建代码库&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 在当前目录新建一个Git代码库
+$ git init
+
+# 新建一个目录，将其初始化为Git代码库
+$ git init [project-name]
+
+# 下载一个项目和它的整个代码历史
+$ git clone [url]
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;二、配置&quot;&gt;&lt;a href=&quot;#二、配置&quot; class=&quot;headerlink&quot; title=&quot;二、配置&quot;&gt;&lt;/a&gt;二、配置&lt;/h2&gt;&lt;p&gt;Git的设置文件为.gitconfig，它可以在用户主目录下（全局配置），也可以在项目目录下（项目配置）。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# 显示当前的Git配置
+$ git config --list
+
+# 编辑Git配置文件
+$ git config -e [--global]
+
+# 设置提交代码时的用户信息
+$ git config [--global] user.name &amp;quot;[name]&amp;quot;
+$ git config [--global] user.email &amp;quot;[email address]&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;三、增加-删除文件&quot;&gt;&lt;a href=&quot;#三、增加-删除文件&quot; class=&quot;headerlink&quot; title=&quot;三、增加/删除文件&quot;&gt;&lt;/a&gt;三、增加/删除文件&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 添加指定文件到暂存区
+$ git add [file1] [file2] ...
+
+# 添加指定目录到暂存区，包括子目录
+$ git add [dir]
+
+# 添加当前目录的所有文件到暂存区
+$ git add .
+
+# 删除工作区文件，并且将这次删除放入暂存区
+$ git rm [file1] [file2] ...
+
+# 停止追踪指定文件，但该文件会保留在工作区
+$ git rm --cached [file]
+
+# 改名文件，并且将这个改名放入暂存区
+$ git mv [file-original] [file-renamed]
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;四、代码提交&quot;&gt;&lt;a href=&quot;#四、代码提交&quot; class=&quot;headerlink&quot; title=&quot;四、代码提交&quot;&gt;&lt;/a&gt;四、代码提交&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 提交暂存区到仓库区
+$ git commit -m [message]
+
+# 提交暂存区的指定文件到仓库区
+$ git commit [file1] [file2] ... -m [message]
+
+# 提交工作区自上次commit之后的变化，直接到仓库区
+$ git commit -a
+
+# 提交时显示所有diff信息
+$ git commit -v
+
+# 使用一次新的commit，替代上一次提交
+# 如果代码没有任何新变化，则用来改写上一次commit的提交信息
+$ git commit --amend -m [message]
+
+# 重做上一次commit，并包括指定文件的新变化
+$ git commit --amend [file1] [file2] ...
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;五、分支&quot;&gt;&lt;a href=&quot;#五、分支&quot; class=&quot;headerlink&quot; title=&quot;五、分支&quot;&gt;&lt;/a&gt;五、分支&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 列出所有本地分支
+$ git branch
+
+# 列出所有远程分支
+$ git branch -r
+
+# 列出所有本地分支和远程分支
+$ git branch -a
+
+# 新建一个分支，但依然停留在当前分支
+$ git branch [branch-name]
+
+# 新建一个分支，并切换到该分支
+$ git checkout -b [branch]
+
+# 新建一个分支，指向指定commit
+$ git branch [branch] [commit]
+
+# 新建一个分支，与指定的远程分支建立追踪关系
+$ git branch --track [branch] [remote-branch]
+
+# 切换到指定分支，并更新工作区
+$ git checkout [branch-name]
+
+# 建立追踪关系，在现有分支与指定的远程分支之间
+$ git branch --set-upstream [branch] [remote-branch]
+
+# 合并指定分支到当前分支
+$ git merge [branch]
+
+# 选择一个commit，合并进当前分支
+$ git cherry-pick [commit]
+
+# 删除分支
+$ git branch -d [branch-name]
+
+# 删除远程分支
+$ git push origin --delete [branch-name]
+$ git branch -dr [remote/branch]
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;六、标签&quot;&gt;&lt;a href=&quot;#六、标签&quot; class=&quot;headerlink&quot; title=&quot;六、标签&quot;&gt;&lt;/a&gt;六、标签&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 列出所有tag
+$ git tag
+
+# 新建一个tag在当前commit
+$ git tag [tag]
+
+# 新建一个tag在指定commit
+$ git tag [tag] [commit]
+
+# 删除本地tag
+$ git tag -d [tag]
+
+# 删除远程tag
+$ git push origin :refs/tags/[tagName]
+
+# 查看tag信息
+$ git show [tag]
+
+# 提交指定tag
+$ git push [remote] [tag]
+
+# 提交所有tag
+$ git push [remote] --tags
+
+# 新建一个分支，指向某个tag
+$ git checkout -b [branch] [tag]
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;七、查看信息&quot;&gt;&lt;a href=&quot;#七、查看信息&quot; class=&quot;headerlink&quot; title=&quot;七、查看信息&quot;&gt;&lt;/a&gt;七、查看信息&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 显示有变更的文件
+$ git status
+
+# 显示当前分支的版本历史
+$ git log
+
+# 显示commit历史，以及每次commit发生变更的文件
+$ git log --stat
+
+# 显示某个commit之后的所有变动，每个commit占据一行
+$ git log [tag] HEAD --pretty=format:%s
+
+# 显示某个commit之后的所有变动，其&amp;quot;提交说明&amp;quot;必须符合搜索条件
+$ git log [tag] HEAD --grep feature
+
+# 显示某个文件的版本历史，包括文件改名
+$ git log --follow [file]
+$ git whatchanged [file]
+
+# 显示指定文件相关的每一次diff
+$ git log -p [file]
+
+# 显示指定文件是什么人在什么时间修改过
+$ git blame [file]
+
+# 显示暂存区和工作区的差异
+$ git diff
+
+# 显示暂存区和上一个commit的差异
+$ git diff --cached [file]
+
+# 显示工作区与当前分支最新commit之间的差异
+$ git diff HEAD
+
+# 显示两次提交之间的差异
+$ git diff [first-branch]...[second-branch]
+
+# 显示某次提交的元数据和内容变化
+$ git show [commit]
+
+# 显示某次提交发生变化的文件
+$ git show --name-only [commit]
+
+# 显示某次提交时，某个文件的内容
+$ git show [commit]:[filename]
+
+# 显示当前分支的最近几次提交
+$ git reflog
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;八、远程同步&quot;&gt;&lt;a href=&quot;#八、远程同步&quot; class=&quot;headerlink&quot; title=&quot;八、远程同步&quot;&gt;&lt;/a&gt;八、远程同步&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 下载远程仓库的所有变动
+$ git fetch [remote]
+
+# 显示所有远程仓库
+$ git remote -v
+
+# 显示某个远程仓库的信息
+$ git remote show [remote]
+
+# 增加一个新的远程仓库，并命名
+$ git remote add [shortname] [url]
+
+# 取回远程仓库的变化，并与本地分支合并
+$ git pull [remote] [branch]
+
+# 上传本地指定分支到远程仓库
+$ git push [remote] [branch]
+
+# 强行推送当前分支到远程仓库，即使有冲突
+$ git push [remote] --force
+
+# 推送所有分支到远程仓库
+$ git push [remote] --all
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;九、撤销&quot;&gt;&lt;a href=&quot;#九、撤销&quot; class=&quot;headerlink&quot; title=&quot;九、撤销&quot;&gt;&lt;/a&gt;九、撤销&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 恢复暂存区的指定文件到工作区
+$ git checkout [file]
+
+# 恢复某个commit的指定文件到暂存区和工作区
+$ git checkout [commit] [file]
+
+# 恢复暂存区的所有文件到工作区
+$ git checkout .
+
+# 重置暂存区的指定文件，与上一次commit保持一致，但工作区不变
+$ git reset [file]
+
+# 重置暂存区与工作区，与上一次commit保持一致
+$ git reset --hard
+
+# 重置当前分支的指针为指定commit，同时重置暂存区，但工作区不变
+$ git reset [commit]
+
+# 重置当前分支的HEAD为指定commit，同时重置暂存区和工作区，与指定commit一致
+$ git reset --hard [commit]
+
+# 重置当前HEAD为指定commit，但保持暂存区和工作区不变
+$ git reset --keep [commit]
+
+# 新建一个commit，用来撤销指定commit
+# 后者的所有变化都将被前者抵消，并且应用到当前分支
+$ git revert [commit]
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;十、其他&quot;&gt;&lt;a href=&quot;#十、其他&quot; class=&quot;headerlink&quot; title=&quot;十、其他&quot;&gt;&lt;/a&gt;十、其他&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;# 生成一个可供发布的压缩包
+$ git archive
+&lt;/code&gt;&lt;/pre&gt;</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;一般来说，日常使用只要记住下图6个命令，就可以了。但是熟练使用，恐怕要记住60～100个命令。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.ruanyifeng.com/blogimg/asset/2015/bg2015120901.png&quot; alt=&quot;&quot;&gt;&lt;/
+    
+    </summary>
+    
+      <category term="代码管理" scheme="http://shimaomao.info/categories/%E4%BB%A3%E7%A0%81%E7%AE%A1%E7%90%86/"/>
+    
+    
+      <category term="Git" scheme="http://shimaomao.info/tags/Git/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>HTTP协议</title>
+    <link href="http://shimaomao.info/2015/06/10/HTTP%E5%8D%8F%E8%AE%AE/"/>
+    <id>http://shimaomao.info/2015/06/10/HTTP协议/</id>
+    <published>2015-06-10T02:16:35.000Z</published>
+    <updated>2016-02-20T02:32:11.292Z</updated>
+    
+    <content type="html">&lt;p&gt;HTTP是一个属于应用层的面向对象的协议，由于其简捷、快速的方式，适用于分布式超媒体信息系统。它于1990年提出，经过几年的使用与发展，得到不断地完善和扩展。目前在WWW中使用的是HTTP/1.0的第六版，HTTP/1.1的规范化工作正在进行之中，而且HTTP-NG(Next Generation of HTTP)的建议已经提出。&lt;br&gt;HTTP协议的主要特点可概括如下：&lt;br&gt;1.支持客户/服务器模式。&lt;br&gt;2.简单快速：客户向服务器请求服务时，只需传送请求方法和路径。请求方法常用的有GET、HEAD、POST。每种方法规定了客户与服务器联系的类型不同。由于HTTP协议简单，使得HTTP服务器的程序规模小，因而通信速度很快。&lt;br&gt;3.灵活：HTTP允许传输任意类型的数据对象。正在传输的类型由Content-Type加以标记。&lt;br&gt;4.无连接：无连接的含义是限制每次连接只处理一个请求。服务器处理完客户的请求，并收到客户的应答后，即断开连接。采用这种方式可以节省传输时间。&lt;br&gt;5.无状态：HTTP协议是无状态协议。无状态是指协议对于事务处理没有记忆能力。缺少状态意味着如果后续处理需要前面的信息，则它必须重传，这样可能导致每次连接传送的数据量增大。另一方面，在服务器不需要先前信息时它的应答就较快。&lt;/p&gt;
+&lt;h2 id=&quot;一、HTTP协议详解之URL篇&quot;&gt;&lt;a href=&quot;#一、HTTP协议详解之URL篇&quot; class=&quot;headerlink&quot; title=&quot;一、HTTP协议详解之URL篇&quot;&gt;&lt;/a&gt;一、HTTP协议详解之URL篇&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;http（超文本传输协议）是一个基于请求与响应模式的、无状态的、应用层的协议，常基于TCP的连接方式，HTTP1.1版本中给出一种持续连接的机制，绝大多数的Web开发，都是构建在HTTP协议之上的Web应用。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;HTTP URL (URL是一种特殊类型的URI，包含了用于查找某个资源的足够的信息)的格式如下：&lt;br&gt;&lt;a href=&quot;http://host[&amp;quot;:&amp;quot;port][abs_path&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://host[&amp;quot;:&amp;quot;port][abs_path&lt;/a&gt;]&lt;br&gt;http表示要通过HTTP协议来定位网络资源；host表示合法的Internet主机域名或者IP地址；port指定一个端口号，为空则使用缺省端口80；abs_path指定请求资源的URI；如果URL中没有给出abs_path，那么当它作为请求URI时，必须以“/”的形式给出，通常这个工作浏览器自动帮我们完成。&lt;br&gt;eg:&lt;br&gt;1、输入：www.guet.edu.cn&lt;br&gt;浏览器自动转换成：&lt;a href=&quot;http://www.guet.edu.cn/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.guet.edu.cn/&lt;/a&gt;&lt;br&gt;2、http:192.168.0.116:8080/index.jsp &lt;/p&gt;
+&lt;h2 id=&quot;二、HTTP协议详解之请求篇&quot;&gt;&lt;a href=&quot;#二、HTTP协议详解之请求篇&quot; class=&quot;headerlink&quot; title=&quot;二、HTTP协议详解之请求篇&quot;&gt;&lt;/a&gt;二、HTTP协议详解之请求篇&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;http请求由三部分组成，分别是：请求行、消息报头、请求正文
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;1、请求行以一个方法符号开头，以空格分开，后面跟着请求的URI和协议的版本，格式如下：Method Request-URI HTTP-Version CRLF&lt;br&gt;其中 Method表示请求方法；Request-URI是一个统一资源标识符；HTTP-Version表示请求的HTTP协议版本；CRLF表示回车和换行（除了作为结尾的CRLF外，不允许出现单独的CR或LF字符）。&lt;/p&gt;
+&lt;p&gt;请求方法（所有方法全为大写）有多种，各个方法的解释如下：&lt;br&gt;GET     请求获取Request-URI所标识的资源&lt;br&gt;POST    在Request-URI所标识的资源后附加新的数据&lt;br&gt;HEAD    请求获取由Request-URI所标识的资源的响应消息报头&lt;br&gt;PUT     请求服务器存储一个资源，并用Request-URI作为其标识&lt;br&gt;DELETE  请求服务器删除Request-URI所标识的资源&lt;br&gt;TRACE   请求服务器回送收到的请求信息，主要用于测试或诊断&lt;br&gt;CONNECT 保留将来使用&lt;br&gt;OPTIONS 请求查询服务器的性能，或者查询与资源相关的选项和需求&lt;br&gt;应用举例：&lt;br&gt;GET方法：在浏览器的地址栏中输入网址的方式访问网页时，浏览器采用GET方法向服务器获取资源，eg:GET /form.html HTTP/1.1 (CRLF)&lt;/p&gt;
+&lt;p&gt;POST方法要求被请求服务器接受附在请求后面的数据，常用于提交表单。&lt;br&gt;eg：POST /reg.jsp HTTP/ (CRLF)&lt;br&gt;Accept:image/gif,image/x-xbit,… (CRLF)&lt;br&gt;…&lt;br&gt;HOST:www.guet.edu.cn (CRLF)&lt;br&gt;Content-Length:22 (CRLF)&lt;br&gt;Connection:Keep-Alive (CRLF)&lt;br&gt;Cache-Control:no-cache (CRLF)&lt;br&gt;(CRLF)         //该CRLF表示消息报头已经结束，在此之前为消息报头&lt;br&gt;user=jeffrey&amp;amp;pwd=1234  //此行以下为提交的数据&lt;/p&gt;
+&lt;p&gt;HEAD方法与GET方法几乎是一样的，对于HEAD请求的回应部分来说，它的HTTP头部中包含的信息与通过GET请求所得到的信息是相同的。利用这个方法，不必传输整个资源内容，就可以得到Request-URI所标识的资源的信息。该方法常用于测试超链接的有效性，是否可以访问，以及最近是否更新。&lt;br&gt;2、请求报头后述&lt;br&gt;3、请求正文(略) &lt;/p&gt;
+&lt;h2 id=&quot;三、HTTP协议详解之响应篇&quot;&gt;&lt;a href=&quot;#三、HTTP协议详解之响应篇&quot; class=&quot;headerlink&quot; title=&quot;三、HTTP协议详解之响应篇&quot;&gt;&lt;/a&gt;三、HTTP协议详解之响应篇&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;在接收和解释请求消息后，服务器返回一个HTTP响应消息。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;HTTP响应也是由三个部分组成，分别是：状态行、消息报头、响应正文&lt;br&gt;1、状态行格式如下：&lt;br&gt;HTTP-Version Status-Code Reason-Phrase CRLF&lt;br&gt;其中，HTTP-Version表示服务器HTTP协议的版本；Status-Code表示服务器发回的响应状态代码；Reason-Phrase表示状态代码的文本描述。&lt;br&gt;状态代码有三位数字组成，第一个数字定义了响应的类别，且有五种可能取值：&lt;br&gt;1xx：指示信息–表示请求已接收，继续处理&lt;br&gt;2xx：成功–表示请求已被成功接收、理解、接受&lt;br&gt;3xx：重定向–要完成请求必须进行更进一步的操作&lt;br&gt;4xx：客户端错误–请求有语法错误或请求无法实现&lt;br&gt;5xx：服务器端错误–服务器未能实现合法的请求&lt;br&gt;常见状态代码、状态描述、说明：&lt;br&gt;200 OK      //客户端请求成功&lt;br&gt;400 Bad Request  //客户端请求有语法错误，不能被服务器所理解&lt;br&gt;401 Unauthorized //请求未经授权，这个状态代码必须和WWW-Authenticate报头域一起使用&lt;br&gt;403 Forbidden  //服务器收到请求，但是拒绝提供服务&lt;br&gt;404 Not Found  //请求资源不存在，eg：输入了错误的URL&lt;br&gt;500 Internal Server Error //服务器发生不可预期的错误&lt;br&gt;503 Server Unavailable  //服务器当前不能处理客户端的请求，一段时间后可能恢复正常&lt;br&gt;eg：HTTP/1.1 200 OK （CRLF）&lt;/p&gt;
+&lt;p&gt;2、响应报头后述&lt;/p&gt;
+&lt;p&gt;3、响应正文就是服务器返回的资源的内容 &lt;/p&gt;
+&lt;h2 id=&quot;四、HTTP协议详解之消息报头篇&quot;&gt;&lt;a href=&quot;#四、HTTP协议详解之消息报头篇&quot; class=&quot;headerlink&quot; title=&quot;四、HTTP协议详解之消息报头篇&quot;&gt;&lt;/a&gt;四、HTTP协议详解之消息报头篇&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;HTTP消息由客户端到服务器的请求和服务器到客户端的响应组成。请求消息和响应消息都是由开始行（对于请求消息，开始行就是请求行，对于响应消息，开始行就是状态行），消息报头（可选），空行（只有CRLF的行），消息正文（可选）组成。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;HTTP消息报头包括普通报头、请求报头、响应报头、实体报头。&lt;br&gt;每一个报头域都是由名字+“：”+空格+值 组成，消息报头域的名字是大小写无关的。&lt;/p&gt;
+&lt;h3 id=&quot;1、普通报头&quot;&gt;&lt;a href=&quot;#1、普通报头&quot; class=&quot;headerlink&quot; title=&quot;1、普通报头&quot;&gt;&lt;/a&gt;1、普通报头&lt;/h3&gt;&lt;p&gt;在普通报头中，有少数报头域用于所有的请求和响应消息，但并不用于被传输的实体，只用于传输的消息。&lt;br&gt;eg：&lt;br&gt;Cache-Control   用于指定缓存指令，缓存指令是单向的（响应中出现的缓存指令在请求中未必会出现），且是独立的（一个消息的缓存指令不会影响另一个消息处理的缓存机制），HTTP1.0使用的类似的报头域为Pragma。&lt;br&gt;请求时的缓存指令包括：no-cache（用于指示请求或响应消息不能缓存）、no-store、max-age、max-stale、min-fresh、only-if-cached;&lt;br&gt;响应时的缓存指令包括：public、private、no-cache、no-store、no-transform、must-revalidate、proxy-revalidate、max-age、s-maxage.&lt;br&gt;eg：为了指示IE浏览器（客户端）不要缓存页面，服务器端的JSP程序可以编写如下：response.sehHeader(“Cache-Control”,”no-cache”);&lt;br&gt;//response.setHeader(“Pragma”,”no-cache”);作用相当于上述代码，通常两者//合用&lt;br&gt;这句代码将在发送的响应消息中设置普通报头域：Cache-Control:no-cache&lt;/p&gt;
+&lt;p&gt;Date普通报头域表示消息产生的日期和时间&lt;/p&gt;
+&lt;p&gt;Connection普通报头域允许发送指定连接的选项。例如指定连接是连续，或者指定“close”选项，通知服务器，在响应完成后，关闭连接&lt;/p&gt;
+&lt;h3 id=&quot;2、请求报头&quot;&gt;&lt;a href=&quot;#2、请求报头&quot; class=&quot;headerlink&quot; title=&quot;2、请求报头&quot;&gt;&lt;/a&gt;2、请求报头&lt;/h3&gt;&lt;p&gt;请求报头允许客户端向服务器端传递请求的附加信息以及客户端自身的信息。&lt;br&gt;常用的请求报头&lt;br&gt;Accept&lt;br&gt;Accept请求报头域用于指定客户端接受哪些类型的信息。eg：Accept：image/gif，表明客户端希望接受GIF图象格式的资源；Accept：text/html，表明客户端希望接受html文本。&lt;br&gt;Accept-Charset&lt;br&gt;Accept-Charset请求报头域用于指定客户端接受的字符集。eg：Accept-Charset:iso-8859-1,gb2312.如果在请求消息中没有设置这个域，缺省是任何字符集都可以接受。&lt;br&gt;Accept-Encoding&lt;br&gt;Accept-Encoding请求报头域类似于Accept，但是它是用于指定可接受的内容编码。eg：Accept-Encoding:gzip.deflate.如果请求消息中没有设置这个域服务器假定客户端对各种内容编码都可以接受。&lt;br&gt;Accept-Language&lt;br&gt;Accept-Language请求报头域类似于Accept，但是它是用于指定一种自然语言。eg：Accept-Language:zh-cn.如果请求消息中没有设置这个报头域，服务器假定客户端对各种语言都可以接受。&lt;br&gt;Authorization&lt;br&gt;Authorization请求报头域主要用于证明客户端有权查看某个资源。当浏览器访问一个页面时，如果收到服务器的响应代码为401（未授权），可以发送一个包含Authorization请求报头域的请求，要求服务器对其进行验证。&lt;br&gt;Host（发送请求时，该报头域是必需的）&lt;br&gt;Host请求报头域主要用于指定被请求资源的Internet主机和端口号，它通常从HTTP URL中提取出来的，eg：&lt;br&gt;我们在浏览器中输入：&lt;a href=&quot;http://www.guet.edu.cn/index.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.guet.edu.cn/index.html&lt;/a&gt;&lt;br&gt;浏览器发送的请求消息中，就会包含Host请求报头域，如下：&lt;br&gt;Host：www.guet.edu.cn&lt;br&gt;此处使用缺省端口号80，若指定了端口号，则变成：Host：www.guet.edu.cn:指定端口号&lt;br&gt;User-Agent&lt;br&gt;我们上网登陆论坛的时候，往往会看到一些欢迎信息，其中列出了你的操作系统的名称和版本，你所使用的浏览器的名称和版本，这往往让很多人感到很神奇，实际上，服务器应用程序就是从User-Agent这个请求报头域中获取到这些信息。User-Agent请求报头域允许客户端将它的操作系统、浏览器和其它属性告诉服务器。不过，这个报头域不是必需的，如果我们自己编写一个浏览器，不使用User-Agent请求报头域，那么服务器端就无法得知我们的信息了。&lt;br&gt;请求报头举例：&lt;br&gt;GET /form.html HTTP/1.1 (CRLF)&lt;br&gt;Accept:image/gif,image/x-xbitmap,image/jpeg,application/x-shockwave-flash,application/vnd.ms-excel,application/vnd.ms-powerpoint,application/msword,&lt;em&gt;/&lt;/em&gt; (CRLF)&lt;br&gt;Accept-Language:zh-cn (CRLF)&lt;br&gt;Accept-Encoding:gzip,deflate (CRLF)&lt;br&gt;If-Modified-Since:Wed,05 Jan 2007 11:21:25 GMT (CRLF)&lt;br&gt;If-None-Match:W/“80b1a4c018f3c41:8317” (CRLF)&lt;br&gt;User-Agent:Mozilla/4.0(compatible;MSIE6.0;Windows NT 5.0) (CRLF)&lt;br&gt;Host:www.guet.edu.cn (CRLF)&lt;br&gt;Connection:Keep-Alive (CRLF)&lt;br&gt;(CRLF)&lt;/p&gt;
+&lt;h3 id=&quot;3、响应报头&quot;&gt;&lt;a href=&quot;#3、响应报头&quot; class=&quot;headerlink&quot; title=&quot;3、响应报头&quot;&gt;&lt;/a&gt;3、响应报头&lt;/h3&gt;&lt;p&gt;响应报头允许服务器传递不能放在状态行中的附加响应信息，以及关于服务器的信息和对Request-URI所标识的资源进行下一步访问的信息。&lt;br&gt;常用的响应报头&lt;br&gt;Location&lt;br&gt;Location响应报头域用于重定向接受者到一个新的位置。Location响应报头域常用在更换域名的时候。&lt;br&gt;Server&lt;br&gt;Server响应报头域包含了服务器用来处理请求的软件信息。与User-Agent请求报头域是相对应的。下面是&lt;br&gt;Server响应报头域的一个例子：&lt;br&gt;Server：Apache-Coyote/1.1&lt;br&gt;WWW-Authenticate&lt;br&gt;WWW-Authenticate响应报头域必须被包含在401（未授权的）响应消息中，客户端收到401响应消息时候，并发送Authorization报头域请求服务器对其进行验证时，服务端响应报头就包含该报头域。&lt;br&gt;eg：WWW-Authenticate:Basic realm=”Basic Auth Test!”  //可以看出服务器对请求资源采用的是基本验证机制。&lt;/p&gt;
+&lt;h3 id=&quot;4、实体报头&quot;&gt;&lt;a href=&quot;#4、实体报头&quot; class=&quot;headerlink&quot; title=&quot;4、实体报头&quot;&gt;&lt;/a&gt;4、实体报头&lt;/h3&gt;&lt;p&gt;请求和响应消息都可以传送一个实体。一个实体由实体报头域和实体正文组成，但并不是说实体报头域和实体正文要在一起发送，可以只发送实体报头域。实体报头定义了关于实体正文（eg：有无实体正文）和请求所标识的资源的元信息。&lt;br&gt;常用的实体报头&lt;br&gt;Content-Encoding&lt;br&gt;Content-Encoding实体报头域被用作媒体类型的修饰符，它的值指示了已经被应用到实体正文的附加内容的编码，因而要获得Content-Type报头域中所引用的媒体类型，必须采用相应的解码机制。Content-Encoding这样用于记录文档的压缩方法，eg：Content-Encoding：gzip&lt;br&gt;Content-Language&lt;br&gt;Content-Language实体报头域描述了资源所用的自然语言。没有设置该域则认为实体内容将提供给所有的语言阅读&lt;br&gt;者。eg：Content-Language:da&lt;br&gt;Content-Length&lt;br&gt;Content-Length实体报头域用于指明实体正文的长度，以字节方式存储的十进制数字来表示。&lt;br&gt;Content-Type&lt;br&gt;Content-Type实体报头域用语指明发送给接收者的实体正文的媒体类型。eg：&lt;br&gt;Content-Type:text/html;charset=ISO-8859-1&lt;br&gt;Content-Type:text/html;charset=GB2312&lt;br&gt;Last-Modified&lt;br&gt;Last-Modified实体报头域用于指示资源的最后修改日期和时间。&lt;br&gt;Expires&lt;br&gt;Expires实体报头域给出响应过期的日期和时间。为了让代理服务器或浏览器在一段时间以后更新缓存中(再次访问曾访问过的页面时，直接从缓存中加载，缩短响应时间和降低服务器负载)的页面，我们可以使用Expires实体报头域指定页面过期的时间。eg：Expires：Thu，15 Sep 2006 16:23:12 GMT&lt;br&gt;HTTP1.1的客户端和缓存必须将其他非法的日期格式（包括0）看作已经过期。eg：为了让浏览器不要缓存页面，我们也可以利用Expires实体报头域，设置为0，jsp中程序如下：response.setDateHeader(“Expires”,”0”);&lt;/p&gt;
+&lt;h2 id=&quot;五、利用telnet观察http协议的通讯过程&quot;&gt;&lt;a href=&quot;#五、利用telnet观察http协议的通讯过程&quot; class=&quot;headerlink&quot; title=&quot;五、利用telnet观察http协议的通讯过程&quot;&gt;&lt;/a&gt;五、利用telnet观察http协议的通讯过程&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;实验目的及原理：
+利用MS的telnet工具，通过手动输入http请求信息的方式，向服务器发出请求，服务器接收、解释和接受请求后，会返回一个响应，该响应会在telnet窗口上显示出来，从而从感性上加深对http协议的通讯过程的认识。
+
+实验步骤：
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;1、打开telnet&lt;/p&gt;
+&lt;p&gt;1.1 打开telnet&lt;br&gt;运行–&amp;gt;cmd–&amp;gt;telnet&lt;/p&gt;
+&lt;p&gt;1.2 打开telnet回显功能&lt;br&gt;set localecho&lt;/p&gt;
+&lt;p&gt;2、连接服务器并发送请求&lt;br&gt;2.1 open www.guet.edu.cn 80  //注意端口号不能省略&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;HEAD /index.asp HTTP/1.0
+Host:www.guet.edu.cn
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;   /&lt;em&gt;我们可以变换请求方法,请求桂林电子主页内容,输入消息如下&lt;/em&gt;/&lt;br&gt;    open www.guet.edu.cn 80 &lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;GET /index.asp HTTP/1.0  //请求资源的内容
+Host:www.guet.edu.cn  
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2.2 open www.sina.com.cn 80  //在命令提示符号下直接输入telnet www.sina.com.cn 80&lt;br&gt;    HEAD /index.asp HTTP/1.0&lt;br&gt;    Host:www.sina.com.cn&lt;/p&gt;
+&lt;p&gt;3 实验结果：&lt;/p&gt;
+&lt;p&gt;3.1 请求信息2.1得到的响应是:&lt;/p&gt;
+&lt;p&gt;HTTP/1.1 200 OK                                              //请求成功&lt;br&gt;Server: Microsoft-IIS/5.0                                    //web服务器&lt;br&gt;Date: Thu,08 Mar 200707:17:51 GMT&lt;br&gt;Connection: Keep-Alive&lt;br&gt;Content-Length: 23330&lt;br&gt;Content-Type: text/html&lt;br&gt;Expries: Thu,08 Mar 2007 07:16:51 GMT&lt;br&gt;Set-Cookie: ASPSESSIONIDQAQBQQQB=BEJCDGKADEDJKLKKAJEOIMMH; path=/&lt;br&gt;Cache-control: private&lt;/p&gt;
+&lt;p&gt;//资源内容省略&lt;/p&gt;
+&lt;p&gt;3.2 请求信息2.2得到的响应是:&lt;/p&gt;
+&lt;p&gt;HTTP/1.0 404 Not Found       //请求失败&lt;br&gt;Date: Thu, 08 Mar 2007 07:50:50 GMT&lt;br&gt;Server: Apache/2.0.54 &lt;unix&gt;&lt;br&gt;Last-Modified: Thu, 30 Nov 2006 11:35:41 GMT&lt;br&gt;ETag: “6277a-415-e7c76980”&lt;br&gt;Accept-Ranges: bytes&lt;br&gt;X-Powered-By: mod_xlayout_jh/0.0.1vhs.markII.remix&lt;br&gt;Vary: Accept-Encoding&lt;br&gt;Content-Type: text/html&lt;br&gt;X-Cache: MISS from zjm152-78.sina.com.cn&lt;br&gt;Via: 1.0 zjm152-78.sina.com.cn:80&lt;squid 2.6.stables-20061207=&quot;&quot;&gt;&lt;br&gt;X-Cache: MISS from th-143.sina.com.cn&lt;br&gt;Connection: close&lt;/squid&gt;&lt;/unix&gt;&lt;/p&gt;
+&lt;p&gt;失去了跟主机的连接&lt;/p&gt;
+&lt;p&gt;按任意键继续…&lt;/p&gt;
+&lt;p&gt;4 .注意事项：1、出现输入错误，则请求不会成功。&lt;br&gt;          2、报头域不分大小写。&lt;br&gt;          3、更深一步了解HTTP协议，可以查看RFC2616，在&lt;a href=&quot;http://www.letf.org/rfc上找到该文件。&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.letf.org/rfc上找到该文件。&lt;/a&gt;&lt;br&gt;          4、开发后台程序必须掌握http协议&lt;/p&gt;
+&lt;h2 id=&quot;六、HTTP协议相关技术补充&quot;&gt;&lt;a href=&quot;#六、HTTP协议相关技术补充&quot; class=&quot;headerlink&quot; title=&quot;六、HTTP协议相关技术补充&quot;&gt;&lt;/a&gt;六、HTTP协议相关技术补充&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;### 1、基础： ##
+高层协议有：文件传输协议FTP、电子邮件传输协议SMTP、域名系统服务DNS、网络新闻传输协议NNTP和HTTP协议等
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;中介由三种：代理(Proxy)、网关(Gateway)和通道(Tunnel)，一个代理根据URI的绝对格式来接受请求，重写全部或部分消息，通过 URI的标识把已格式化过的请求发送到服务器。网关是一个接收代理，作为一些其它服务器的上层，并且如果必须的话，可以把请求翻译给下层的服务器协议。一 个通道作为不改变消息的两个连接之间的中继点。当通讯需要通过一个中介(例如：防火墙等)或者是中介不能识别消息的内容时，通道经常被使用。&lt;br&gt;     代理(Proxy)：一个中间程序，它可以充当一个服务器，也可以充当一个客户机，为其它客户机建立请求。请求是通过可能的翻译在内部或经过传递到其它的 服务器中。一个代理在发送请求信息之前，必须解释并且如果可能重写它。代理经常作为通过防火墙的客户机端的门户，代理还可以作为一个帮助应用来通过协议处 理没有被用户代理完成的请求。&lt;br&gt;网关(Gateway)：一个作为其它服务器中间媒介的服务器。与代理不同的是，网关接受请求就好象对被请求的资源来说它就是源服务器；发出请求的客户机并没有意识到它在同网关打交道。&lt;br&gt;网关经常作为通过防火墙的服务器端的门户，网关还可以作为一个协议翻译器以便存取那些存储在非HTTP系统中的资源。&lt;br&gt;    通道(Tunnel)：是作为两个连接中继的中介程序。一旦激活，通道便被认为不属于HTTP通讯，尽管通道可能是被一个HTTP请求初始化的。当被中继 的连接两端关闭时，通道便消失。当一个门户(Portal)必须存在或中介(Intermediary)不能解释中继的通讯时通道被经常使用。&lt;/p&gt;
+&lt;h3 id=&quot;2、协议分析的优势—HTTP分析器检测网络攻击&quot;&gt;&lt;a href=&quot;#2、协议分析的优势—HTTP分析器检测网络攻击&quot; class=&quot;headerlink&quot; title=&quot;2、协议分析的优势—HTTP分析器检测网络攻击&quot;&gt;&lt;/a&gt;2、协议分析的优势—HTTP分析器检测网络攻击&lt;/h3&gt;&lt;p&gt;以模块化的方式对高层协议进行分析处理，将是未来入侵检测的方向。&lt;br&gt;HTTP及其代理的常用端口80、3128和8080在network部分用port标签进行了规定&lt;/p&gt;
+&lt;h3 id=&quot;3、HTTP协议Content-Lenth限制漏洞导致拒绝服务攻击&quot;&gt;&lt;a href=&quot;#3、HTTP协议Content-Lenth限制漏洞导致拒绝服务攻击&quot; class=&quot;headerlink&quot; title=&quot;3、HTTP协议Content Lenth限制漏洞导致拒绝服务攻击&quot;&gt;&lt;/a&gt;3、HTTP协议Content Lenth限制漏洞导致拒绝服务攻击&lt;/h3&gt;&lt;p&gt;使用POST方法时，可以设置ContentLenth来定义需要传送的数据长度，例如ContentLenth:999999999，在传送完成前，内 存不会释放，攻击者可以利用这个缺陷，连续向WEB服务器发送垃圾数据直至WEB服务器内存耗尽。这种攻击方法基本不会留下痕迹。&lt;br&gt;&lt;a href=&quot;http://www.cnpaf.net/Class/HTTP/0532918532667330.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.cnpaf.net/Class/HTTP/0532918532667330.html&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&quot;4、利用HTTP协议的特性进行拒绝服务攻击的一些构思&quot;&gt;&lt;a href=&quot;#4、利用HTTP协议的特性进行拒绝服务攻击的一些构思&quot; class=&quot;headerlink&quot; title=&quot;4、利用HTTP协议的特性进行拒绝服务攻击的一些构思&quot;&gt;&lt;/a&gt;4、利用HTTP协议的特性进行拒绝服务攻击的一些构思&lt;/h3&gt;&lt;p&gt;服务器端忙于处理攻击者伪造的TCP连接请求而无暇理睬客户的正常请求（毕竟客户端的正常请求比率非常之小），此时从正常客户的角度看来，服务器失去响应，这种情况我们称作：服务器端受到了SYNFlood攻击（SYN洪水攻击）。&lt;br&gt;而Smurf、TearDrop等是利用ICMP报文来Flood和IP碎片攻击的。本文用“正常连接”的方法来产生拒绝服务攻击。&lt;br&gt;19端口在早期已经有人用来做Chargen攻击了，即Chargen_Denial_of_Service，但是！他们用的方法是在两台Chargen 服务器之间产生UDP连接，让服务器处理过多信息而DOWN掉，那么，干掉一台WEB服务器的条件就必须有2个：1.有Chargen服务2.有HTTP 服务&lt;br&gt;方法：攻击者伪造源IP给N台Chargen发送连接请求（Connect），Chargen接收到连接后就会返回每秒72字节的字符流（实际上根据网络实际情况，这个速度更快）给服务器。&lt;/p&gt;
+&lt;h3 id=&quot;5、Http指纹识别技术&quot;&gt;&lt;a href=&quot;#5、Http指纹识别技术&quot; class=&quot;headerlink&quot; title=&quot;5、Http指纹识别技术&quot;&gt;&lt;/a&gt;5、Http指纹识别技术&lt;/h3&gt;&lt;p&gt;   Http指纹识别的原理大致上也是相同的：记录不同服务器对Http协议执行中的微小差别进行识别.Http指纹识别比TCP/IP堆栈指纹识别复杂许 多,理由是定制Http服务器的配置文件、增加插件或组件使得更改Http的响应信息变的很容易,这样使得识别变的困难；然而定制TCP/IP堆栈的行为 需要对核心层进行修改,所以就容易识别.&lt;br&gt;      要让服务器返回不同的Banner信息的设置是很简单的,象Apache这样的开放源代码的Http服务器,用户可以在源代码里修改Banner信息,然 后重起Http服务就生效了；对于没有公开源代码的Http服务器比如微软的IIS或者是Netscape,可以在存放Banner信息的Dll文件中修 改,相关的文章有讨论的,这里不再赘述,当然这样的修改的效果还是不错的.另外一种模糊Banner信息的方法是使用插件。&lt;br&gt;常用测试请求：&lt;br&gt;1：HEAD/Http/1.0发送基本的Http请求&lt;br&gt;2：DELETE/Http/1.0发送那些不被允许的请求,比如Delete请求&lt;br&gt;3：GET/Http/3.0发送一个非法版本的Http协议请求&lt;br&gt;4：GET/JUNK/1.0发送一个不正确规格的Http协议请求&lt;br&gt;Http指纹识别工具Httprint,它通过运用统计学原理,组合模糊的逻辑学技术,能很有效的确定Http服务器的类型.它可以被用来收集和分析不同Http服务器产生的签名。&lt;/p&gt;
+&lt;h3 id=&quot;6、其他：&quot;&gt;&lt;a href=&quot;#6、其他：&quot; class=&quot;headerlink&quot; title=&quot;6、其他：&quot;&gt;&lt;/a&gt;6、其他：&lt;/h3&gt;&lt;p&gt;为了提高用户使用浏览器时的性能，现代浏览器还支持并发的访问方式，浏览一个网页时同时建立多个连接，以迅速获得一个网页上的多个图标，这样能更快速完成整个网页的传输。&lt;br&gt;HTTP1.1中提供了这种持续连接的方式，而下一代HTTP协议：HTTP-NG更增加了有关会话控制、丰富的内容协商等方式的支持，来提供&lt;br&gt;更高效率的连接。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;HTTP是一个属于应用层的面向对象的协议，由于其简捷、快速的方式，适用于分布式超媒体信息系统。它于1990年提出，经过几年的使用与发展，得到不断地完善和扩展。目前在WWW中使用的是HTTP/1.0的第六版，HTTP/1.1的规范化工作正在进行之中，而且HTTP-NG(Nex
+    
+    </summary>
+    
+      <category term="基础" scheme="http://shimaomao.info/categories/%E5%9F%BA%E7%A1%80/"/>
+    
+    
+      <category term="HTTP" scheme="http://shimaomao.info/tags/HTTP/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>JS中的prototype</title>
+    <link href="http://shimaomao.info/2015/05/01/JS%E4%B8%AD%E7%9A%84prototype/"/>
+    <id>http://shimaomao.info/2015/05/01/JS中的prototype/</id>
+    <published>2015-04-30T16:00:00.000Z</published>
+    <updated>2016-02-20T09:35:26.326Z</updated>
+    
+    <content type="html">&lt;p&gt;原型法设计模式&lt;/p&gt;
+&lt;p&gt;在.Net中可以使用clone()来实现原型法&lt;/p&gt;
+&lt;p&gt;原型法的主要思想是，现在有1个类A,我想要创建一个类B,这个类是以A为原型的,并且能进行扩展。我们称B的原型为A。&lt;/p&gt;
+&lt;h4 id=&quot;javascript的方法可以分为三类：&quot;&gt;&lt;a href=&quot;#javascript的方法可以分为三类：&quot; class=&quot;headerlink&quot; title=&quot;javascript的方法可以分为三类：&quot;&gt;&lt;/a&gt;javascript的方法可以分为三类：&lt;/h4&gt;&lt;p&gt;a 类方法&lt;/p&gt;
+&lt;p&gt;b 对象方法&lt;/p&gt;
+&lt;p&gt;c 原型方法&lt;/p&gt;
+&lt;p&gt;function People(name)&lt;br&gt;{&lt;br&gt;  this.name=name;&lt;br&gt;  //对象方法&lt;br&gt;  this.Introduce=function(){&lt;br&gt;    alert(“My name is “+this.name);&lt;br&gt;  }&lt;br&gt;}&lt;br&gt;//类方法&lt;br&gt;People.Run=function(){&lt;br&gt;  alert(“I can run”);&lt;br&gt;}&lt;br&gt;//原型方法&lt;br&gt;People.prototype.IntroduceChinese=function(){&lt;br&gt;  alert(“我的名字是”+this.name);&lt;br&gt;}&lt;/p&gt;
+&lt;p&gt;//测试&lt;/p&gt;
+&lt;p&gt;var p1=new People(“Windking”);&lt;/p&gt;
+&lt;p&gt;p1.Introduce();&lt;/p&gt;
+&lt;p&gt;People.Run();&lt;/p&gt;
+&lt;p&gt;p1.IntroduceChinese();&lt;/p&gt;
+&lt;p&gt;也可以obj1.func.call(obj)方法&lt;/p&gt;
+&lt;p&gt;意思是将obj看成obj1,调用func方法&lt;/p&gt;
+&lt;h4 id=&quot;prototype是什么含义？&quot;&gt;&lt;a href=&quot;#prototype是什么含义？&quot; class=&quot;headerlink&quot; title=&quot;prototype是什么含义？&quot;&gt;&lt;/a&gt;prototype是什么含义？&lt;/h4&gt;&lt;p&gt;javascript中的每个对象都有prototype属性，Javascript中对象的prototype属性的解释是：返回对象类型原型的引用。&lt;/p&gt;
+&lt;p&gt;A.prototype = new B();&lt;/p&gt;
+&lt;p&gt;理解prototype不应把它和继承混淆。A的prototype为B的一个实例，可以理解A将B中的方法和属性全部克隆了一遍。A能使用B的方法和属性。这里强调的是克隆而不是继承。可以出现这种情况：A的prototype是B的实例，同时B的prototype也是A的实例。 &lt;/p&gt;
+&lt;p&gt;实例：&lt;/p&gt;
+&lt;p&gt;function baseClass()&lt;br&gt;{&lt;br&gt;  this.showMsg = function()&lt;br&gt;  {&lt;br&gt;     alert(“baseClass::showMsg”);&lt;br&gt;  }&lt;br&gt;}&lt;/p&gt;
+&lt;p&gt;function extendClass()&lt;br&gt;{&lt;br&gt;}&lt;/p&gt;
+&lt;p&gt;extendClass.prototype = new baseClass();&lt;br&gt;var instance = new extendClass();&lt;br&gt;instance.showMsg(); // 显示baseClass::showMsg&lt;/p&gt;
+&lt;p&gt;我们首先定义了baseClass类，然后我们要定义extentClass，但是我们打算以baseClass的一个实例为原型，来克隆的extendClass也同时包含showMsg这个对象方法。&lt;/p&gt;
+&lt;p&gt;extendClass.prototype = new baseClass()就可以阅读为：extendClass是以baseClass的一个实例为原型克隆创建的。&lt;/p&gt;
+&lt;p&gt;一个问题，如果extendClass中本身包含有一个与baseClass的方法同名的方法会怎么样？&lt;/p&gt;
+&lt;p&gt;function baseClass()&lt;br&gt;{&lt;br&gt;    this.showMsg = function()&lt;br&gt;    {&lt;br&gt;        alert(“baseClass::showMsg”);&lt;br&gt;    }&lt;br&gt;}&lt;/p&gt;
+&lt;p&gt;function extendClass()&lt;br&gt;{&lt;br&gt;    this.showMsg =function ()&lt;br&gt;    {&lt;br&gt;        alert(“extendClass::showMsg”);&lt;br&gt;    }&lt;br&gt;}&lt;/p&gt;
+&lt;p&gt;extendClass.prototype = new baseClass();&lt;br&gt;var instance = new extendClass();&lt;/p&gt;
+&lt;p&gt;instance.showMsg();//显示extendClass::showMsg&lt;/p&gt;
+&lt;p&gt;实验证明：函数运行时会先去本体的函数中去找，如果找到则运行，找不到则去prototype中寻找函数。或者可以理解为prototype不会克隆同名函数。&lt;/p&gt;
+&lt;p&gt;又会有一个新的问题：&lt;/p&gt;
+&lt;p&gt;如果我想使用extendClass的一个实例instance调用baseClass的对象方法showMsg怎么办？&lt;/p&gt;
+&lt;p&gt;答案是可以使用call: &lt;/p&gt;
+&lt;p&gt;extendClass.prototype = new baseClass();&lt;br&gt;var instance = new extendClass();&lt;/p&gt;
+&lt;p&gt;var baseinstance = new baseClass();&lt;br&gt;baseinstance.showMsg.call(instance);//显示baseClass::showMsg&lt;/p&gt;
+&lt;p&gt;这里的baseinstance.showMsg.call(instance);阅读为“将instance当做baseinstance来调用，调用它的对象方法showMsg”好了&lt;/p&gt;
+&lt;p&gt;为什么不用baseClass.showMsg.call(instance);&lt;/p&gt;
+&lt;p&gt;这就是对象方法和类方法的区别，我们想调用的是baseClass的对象方法。&lt;/p&gt;
+&lt;p&gt;总结：&lt;/p&gt;
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+function baseClass()
+{
+    this.showMsg = function()
+    {
+        alert(&quot;baseClass::showMsg&quot;);   
+    }
+
+    this.baseShowMsg = function()
+    {
+        alert(&quot;baseClass::baseShowMsg&quot;);
+    }
+}
+baseClass.showMsg = function()
+{
+    alert(&quot;baseClass::showMsg static&quot;);
+}
+
+function extendClass()
+{
+    this.showMsg =function ()
+    {
+        alert(&quot;extendClass::showMsg&quot;);
+    }
+}
+extendClass.showMsg = function()
+{
+    alert(&quot;extendClass::showMsg static&quot;)
+}
+
+extendClass.prototype = new baseClass();
+var instance = new extendClass();
+
+instance.showMsg(); //显示extendClass::showMsg
+instance.baseShowMsg(); //显示baseClass::baseShowMsg
+instance.showMsg(); //显示extendClass::showMsg
+
+baseClass.showMsg.call(instance);//显示baseClass::showMsg static
+
+var baseinstance = new baseClass();
+baseinstance.showMsg.call(instance);//显示baseClass::showMsg
+
+&lt;/script&gt;</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;原型法设计模式&lt;/p&gt;
+&lt;p&gt;在.Net中可以使用clone()来实现原型法&lt;/p&gt;
+&lt;p&gt;原型法的主要思想是，现在有1个类A,我想要创建一个类B,这个类是以A为原型的,并且能进行扩展。我们称B的原型为A。&lt;/p&gt;
+&lt;h4 id=&quot;javascript的方法可以分为三类：&quot;
+    
+    </summary>
+    
+      <category term="前端" scheme="http://shimaomao.info/categories/%E5%89%8D%E7%AB%AF/"/>
+    
+    
+      <category term="JS" scheme="http://shimaomao.info/tags/JS/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>学习Javascript闭包（Closure）</title>
+    <link href="http://shimaomao.info/2015/04/16/%E5%AD%A6%E4%B9%A0Javascript%E9%97%AD%E5%8C%85%EF%BC%88Closure%EF%BC%89/"/>
+    <id>http://shimaomao.info/2015/04/16/学习Javascript闭包（Closure）/</id>
+    <published>2015-04-15T16:00:00.000Z</published>
+    <updated>2016-02-20T09:34:55.734Z</updated>
+    
+    <content type="html">&lt;h3 id=&quot;一、变量的作用域&quot;&gt;&lt;a href=&quot;#一、变量的作用域&quot; class=&quot;headerlink&quot; title=&quot;一、变量的作用域&quot;&gt;&lt;/a&gt;一、变量的作用域&lt;/h3&gt;&lt;p&gt;要理解闭包，首先必须理解Javascript特殊的变量作用域。&lt;/p&gt;
+&lt;p&gt;变量的作用域无非就是两种：全局变量和局部变量。&lt;/p&gt;
+&lt;p&gt;Javascript语言的特殊之处，就在于函数内部可以直接读取全局变量。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　var n=999;
+
+　　function f1(){
+　　　　alert(n);
+　　}
+
+　　f1(); // 999
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;另一方面，在函数外部自然无法读取函数内的局部变量。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+　　　　var n=999;
+　　}
+
+　　alert(n); // error
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里有一个地方需要注意，函数内部声明变量的时候，一定要使用var命令。如果不用的话，你实际上声明了一个全局变量！&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+　　　　n=999;
+　　}
+
+　　f1();
+
+　　alert(n); // 999
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;二、如何从外部读取局部变量？&quot;&gt;&lt;a href=&quot;#二、如何从外部读取局部变量？&quot; class=&quot;headerlink&quot; title=&quot;二、如何从外部读取局部变量？&quot;&gt;&lt;/a&gt;二、如何从外部读取局部变量？&lt;/h3&gt;&lt;p&gt;出于种种原因，我们有时候需要得到函数内的局部变量。但是，前面已经说过了，正常情况下，这是办不到的，只有通过变通方法才能实现。&lt;/p&gt;
+&lt;p&gt;那就是在函数的内部，再定义一个函数。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+
+　　　　var n=999;
+
+　　　　function f2(){
+　　　　　　alert(n); // 999
+　　　　}
+
+　　}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在上面的代码中，函数f2就被包括在函数f1内部，这时f1内部的所有局部变量，对f2都是可见的。但是反过来就不行，f2内部的局部变量，对f1就是不可见的。这就是Javascript语言特有的”链式作用域”结构（chain scope），子对象会一级一级地向上寻找所有父对象的变量。所以，父对象的所有变量，对子对象都是可见的，反之则不成立。&lt;/p&gt;
+&lt;p&gt;既然f2可以读取f1中的局部变量，那么只要把f2作为返回值，我们不就可以在f1外部读取它的内部变量了吗！&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+
+　　　　var n=999;
+
+　　　　function f2(){
+　　　　　　alert(n);
+　　　　}
+
+　　　　return f2;
+
+　　}
+
+　　var result=f1();
+
+　　result(); // 999
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;三、闭包的概念&quot;&gt;&lt;a href=&quot;#三、闭包的概念&quot; class=&quot;headerlink&quot; title=&quot;三、闭包的概念&quot;&gt;&lt;/a&gt;三、闭包的概念&lt;/h3&gt;&lt;p&gt;上一节代码中的f2函数，就是闭包。&lt;/p&gt;
+&lt;p&gt;各种专业文献上的”闭包”（closure）定义非常抽象，很难看懂。我的理解是，闭包就是能够读取其他函数内部变量的函数。&lt;/p&gt;
+&lt;p&gt;由于在Javascript语言中，只有函数内部的子函数才能读取局部变量，因此可以把闭包简单理解成”定义在一个函数内部的函数”。&lt;/p&gt;
+&lt;p&gt;所以，在本质上，闭包就是将函数内部和函数外部连接起来的一座桥梁。&lt;/p&gt;
+&lt;h3 id=&quot;四、闭包的用途&quot;&gt;&lt;a href=&quot;#四、闭包的用途&quot; class=&quot;headerlink&quot; title=&quot;四、闭包的用途&quot;&gt;&lt;/a&gt;四、闭包的用途&lt;/h3&gt;&lt;p&gt;闭包可以用在许多地方。它的最大用处有两个，一个是前面提到的可以读取函数内部的变量，另一个就是让这些变量的值始终保持在内存中。&lt;/p&gt;
+&lt;p&gt;怎么来理解这句话呢？请看下面的代码。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　function f1(){
+
+　　　　var n=999;
+
+　　　　nAdd=function(){n+=1}
+
+　　　　function f2(){
+　　　　　　alert(n);
+　　　　}
+
+　　　　return f2;
+
+　　}
+
+　　var result=f1();
+
+　　result(); // 999
+
+　　nAdd();
+
+　　result(); // 1000
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这段代码中，result实际上就是闭包f2函数。它一共运行了两次，第一次的值是999，第二次的值是1000。这证明了，函数f1中的局部变量n一直保存在内存中，并没有在f1调用后被自动清除。&lt;/p&gt;
+&lt;p&gt;为什么会这样呢？原因就在于f1是f2的父函数，而f2被赋给了一个全局变量，这导致f2始终在内存中，而f2的存在依赖于f1，因此f1也始终在内存中，不会在调用结束后，被垃圾回收机制（garbage collection）回收。&lt;/p&gt;
+&lt;p&gt;这段代码中另一个值得注意的地方，就是”nAdd=function(){n+=1}”这一行，首先在nAdd前面没有使用var关键字，因此nAdd是一个全局变量，而不是局部变量。其次，nAdd的值是一个匿名函数（anonymous function），而这个匿名函数本身也是一个闭包，所以nAdd相当于是一个setter，可以在函数外部对函数内部的局部变量进行操作。&lt;/p&gt;
+&lt;h3 id=&quot;五、使用闭包的注意点&quot;&gt;&lt;a href=&quot;#五、使用闭包的注意点&quot; class=&quot;headerlink&quot; title=&quot;五、使用闭包的注意点&quot;&gt;&lt;/a&gt;五、使用闭包的注意点&lt;/h3&gt;&lt;p&gt;1）由于闭包会使得函数中的变量都被保存在内存中，内存消耗很大，所以不能滥用闭包，否则会造成网页的性能问题，在IE中可能导致内存泄露。解决方法是，在退出函数之前，将不使用的局部变量全部删除。&lt;/p&gt;
+&lt;p&gt;2）闭包会在父函数外部，改变父函数内部变量的值。所以，如果你把父函数当作对象（object）使用，把闭包当作它的公用方法（Public Method），把内部变量当作它的私有属性（private value），这时一定要小心，不要随便改变父函数内部变量的值。&lt;/p&gt;
+&lt;h3 id=&quot;六、思考题&quot;&gt;&lt;a href=&quot;#六、思考题&quot; class=&quot;headerlink&quot; title=&quot;六、思考题&quot;&gt;&lt;/a&gt;六、思考题&lt;/h3&gt;&lt;p&gt;如果你能理解下面两段代码的运行结果，应该就算理解闭包的运行机制了。&lt;/p&gt;
+&lt;p&gt;代码片段一。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　var name = &amp;quot;The Window&amp;quot;;
+
+　　var object = {
+　　　　name : &amp;quot;My Object&amp;quot;,
+
+　　　　getNameFunc : function(){
+　　　　　　return function(){
+　　　　　　　　return this.name;
+　　　　　　};
+
+　　　　}
+
+　　};
+
+　　alert(object.getNameFunc()());
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;代码片段二。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;　　var name = &amp;quot;The Window&amp;quot;;
+
+　　var object = {
+　　　　name : &amp;quot;My Object&amp;quot;,
+
+　　　　getNameFunc : function(){
+　　　　　　var that = this;
+　　　　　　return function(){
+　　　　　　　　return that.name;
+　　　　　　};
+
+　　　　}
+
+　　};
+
+　　alert(object.getNameFunc()());
+&lt;/code&gt;&lt;/pre&gt;</content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;一、变量的作用域&quot;&gt;&lt;a href=&quot;#一、变量的作用域&quot; class=&quot;headerlink&quot; title=&quot;一、变量的作用域&quot;&gt;&lt;/a&gt;一、变量的作用域&lt;/h3&gt;&lt;p&gt;要理解闭包，首先必须理解Javascript特殊的变量作用域。&lt;/p&gt;
+&lt;p&gt;变量的作用域无
+    
+    </summary>
+    
+      <category term="前端" scheme="http://shimaomao.info/categories/%E5%89%8D%E7%AB%AF/"/>
+    
+    
+      <category term="JS" scheme="http://shimaomao.info/tags/JS/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>js闭包</title>
+    <link href="http://shimaomao.info/2015/04/13/js%E9%97%AD%E5%8C%85/"/>
+    <id>http://shimaomao.info/2015/04/13/js闭包/</id>
+    <published>2015-04-12T16:00:00.000Z</published>
+    <updated>2016-02-20T09:33:41.992Z</updated>
+    
+    <content type="html">&lt;h2 id=&quot;1、什么是闭包&quot;&gt;&lt;a href=&quot;#1、什么是闭包&quot; class=&quot;headerlink&quot; title=&quot;1、什么是闭包&quot;&gt;&lt;/a&gt;1、什么是闭包&lt;/h2&gt;&lt;p&gt;闭包，官方对闭包的解释是：一个拥有许多变量和绑定了这些变量的环境的表达式（通常是一个函数），因而这些变量也是该表达式的一部分。闭包的特点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;作为一个函数变量的一个引用，当函数返回时，其处于激活状态。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;一个闭包就是当一个函数返回时，一个没有释放资源的栈区。&lt;br&gt;　　简单的说，Javascript允许使用内部函数—即函数定义和函数表达式位于另一个函数的函数体内。而且，这些内部函数可以访问它们所在的外部函数中声明的所有局部变量、参数和声明的其他内部函数。当其中一个这样的内部函数在包含它们的外部函数之外被调用时，就会形成闭包。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&quot;2、闭包的几种写法和用法&quot;&gt;&lt;a href=&quot;#2、闭包的几种写法和用法&quot; class=&quot;headerlink&quot; title=&quot;2、闭包的几种写法和用法&quot;&gt;&lt;/a&gt;2、闭包的几种写法和用法&lt;/h2&gt;&lt;p&gt;首先要明白，在JS中一切都是对象，函数是对象的一种。&lt;/p&gt;
+&lt;p&gt;//第1种写法&lt;br&gt;function Circle(r) {&lt;br&gt;  this.r = r;&lt;br&gt;}&lt;br&gt;Circle.PI = 3.14159;&lt;br&gt;Circle.prototype.area = function() {&lt;br&gt;  return Circle.PI &lt;em&gt; this.r &lt;/em&gt; this.r;&lt;br&gt;}  &lt;/p&gt;
+&lt;p&gt;var c = new Circle(1.0);&lt;br&gt;alert(c.area());   &lt;/p&gt;
+&lt;p&gt;这种写法没什么特别的，只是给函数添加一些属性。&lt;/p&gt;
+&lt;p&gt;`//第2种写法&lt;br&gt;var Circle = function() {&lt;br&gt;   var obj = new Object();&lt;br&gt;   obj.PI = 3.14159;  &lt;/p&gt;
+&lt;p&gt;   obj.area = function( r ) {&lt;br&gt;       return this.PI &lt;em&gt; r &lt;/em&gt; r;&lt;br&gt;   }&lt;br&gt;   return obj;&lt;br&gt;}  &lt;/p&gt;
+&lt;p&gt;var c = new Circle();&lt;br&gt;alert( c.area( 1.0 ) );`&lt;/p&gt;
+&lt;p&gt;这种写法是声明一个变量，将一个函数当作值赋给变量。&lt;/p&gt;
+&lt;p&gt;//第3种写法&lt;br&gt;var Circle = new Object();&lt;br&gt;Circle.PI = 3.14159;&lt;br&gt;Circle.Area = function( r ) {&lt;br&gt;       return this.PI &lt;em&gt; r &lt;/em&gt; r;&lt;br&gt;}  &lt;/p&gt;
+&lt;p&gt;alert( Circle.Area( 1.0 ) );  &lt;/p&gt;
+&lt;p&gt;这种方法最好理解，就是new 一个对象，然后给对象添加属性和方法。&lt;/p&gt;
+&lt;p&gt;//第4种写法&lt;br&gt;var Circle={&lt;br&gt;   “PI”:3.14159,&lt;br&gt; “area”:function(r){&lt;br&gt;          return this.PI &lt;em&gt; r &lt;/em&gt; r;&lt;br&gt;        }&lt;br&gt;};&lt;br&gt;alert( Circle.area(1.0) ); &lt;/p&gt;
+&lt;p&gt;这种方法使用较多，也最为方便。var obj = {}就是声明一个空的对象。&lt;/p&gt;
+&lt;p&gt;//第5种写法&lt;br&gt;var Circle = new Function(“this.PI = 3.14159;this.area = function( r ) {return r&lt;em&gt;r&lt;/em&gt;this.PI;}”);  &lt;/p&gt;
+&lt;p&gt;alert( (new Circle()).area(1.0) ); &lt;/p&gt;
+&lt;p&gt;总的来说，上面几种方法，第2中和第4中较为常见。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;1、什么是闭包&quot;&gt;&lt;a href=&quot;#1、什么是闭包&quot; class=&quot;headerlink&quot; title=&quot;1、什么是闭包&quot;&gt;&lt;/a&gt;1、什么是闭包&lt;/h2&gt;&lt;p&gt;闭包，官方对闭包的解释是：一个拥有许多变量和绑定了这些变量的环境的表达式（通常是一个函数），因而这些
+    
+    </summary>
+    
+      <category term="前端" scheme="http://shimaomao.info/categories/%E5%89%8D%E7%AB%AF/"/>
+    
+    
+      <category term="JS" scheme="http://shimaomao.info/tags/JS/"/>
     
   </entry>
   
